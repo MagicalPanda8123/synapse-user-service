@@ -1,0 +1,23 @@
+// import environment variables
+import 'dotenv/config'
+
+import app from './app.js'
+import prisma from './config/prisma.js'
+
+async function startServer() {
+  try {
+    await prisma.$connect()
+    console.log('Connected to Prisma DB')
+    // Future: connect to RabbitMQ, Redis, etc.
+
+    const PORT = process.env.PORT || 3000
+    app.listen(PORT, () => {
+      console.log(`👤 User service running on port ${PORT}`)
+    })
+  } catch (err) {
+    console.error('Failed to start server:', err)
+    process.exit(1)
+  }
+}
+
+startServer()

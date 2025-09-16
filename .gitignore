@@ -46,3 +46,4 @@ keys/*.pem
 /generated/prisma
 
 just-dont/
+/generated/prisma
