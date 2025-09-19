@@ -2,6 +2,7 @@ import {
   getUserPreferences,
   getUserProfile,
   registerUser,
+  updateUserPreferences,
   updateUserProfile,
 } from '../services/index.js'
 
@@ -139,6 +140,28 @@ export async function getUserPreferencesController(req, res, next) {
       updatedAt,
       ...filtered
     } = userPreferences
+    res.json(filtered)
+  } catch (error) {
+    next(error)
+  }
+}
+
+export async function updateUserPreferencesController(req, res, next) {
+  try {
+    const userId = req.user.sub
+
+    // check if the sub and the id in the route param match
+    if (userId !== req.params.id) {
+      return res
+        .status(403)
+        .json({ error: "Cannot update another user's preferences" })
+    }
+    // get the already validated body (from validate middleware)
+    const preferences = req.validatedBody
+    const upadted = await updateUserPreferences(userId, preferences)
+
+    // filter fields to make response more compact
+    const { id, userId: _userId, createdAt, updatedAt, ...filtered } = upadted
     res.json(filtered)
   } catch (error) {
     next(error)

@@ -3,9 +3,15 @@ import {
   getUserPreferencesController,
   getUserProfileController,
   registerUserController,
+  updateUserPreferencesController,
   updateUserProfileController,
 } from '../controllers/index.js'
-import { internalAuthMiddleware, authMiddleware } from '../middleware/index.js'
+import {
+  internalAuthMiddleware,
+  authMiddleware,
+  validate,
+} from '../middleware/index.js'
+import { userPreferencesSchema } from '../validations/index.js'
 
 const router = Router()
 
@@ -17,5 +23,12 @@ router.patch('/:id', authMiddleware, updateUserProfileController)
 
 // user preferences endpoints
 router.get('/:id/preferences', authMiddleware, getUserPreferencesController)
+
+router.patch(
+  '/:id/preferences',
+  authMiddleware,
+  validate(userPreferencesSchema),
+  updateUserPreferencesController
+)
 
 export default router
