@@ -2,6 +2,7 @@ import {
   createUser,
   createUserPreferences,
   findUserById,
+  findUserPreferences,
   updateUserById,
 } from '../repositories/index.js'
 
@@ -44,4 +45,9 @@ export async function updateUserProfile(userId, data) {
 // delete user profile
 export async function deleteUserProfile(userId) {
   return await deleteUserProfile(userId)
+}
+
+// get user preferences
+export async function getUserPreferences(userId) {
+  return await findUserPreferences(userId)
 }

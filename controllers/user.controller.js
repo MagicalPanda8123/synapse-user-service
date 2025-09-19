@@ -1,4 +1,5 @@
 import {
+  getUserPreferences,
   getUserProfile,
   registerUser,
   updateUserProfile,
@@ -115,3 +116,31 @@ export async function updateUserProfileController(req, res, next) {
 //     }
 //   } catch (error) {}
 // }
+
+export async function getUserPreferencesController(req, res, next) {
+  try {
+    const userId = req.user.sub
+    if (!userId) {
+      return res
+        .status(401)
+        .json({ error: 'Unauthorized: missing user identifier' })
+    }
+    if (userId !== req.params.id) {
+      return res
+        .status(403)
+        .json({ error: "Forbidden: cannot get another user's profile" })
+    }
+    const userPreferences = await getUserPreferences(userId)
+    // excluding unnecessary fields
+    const {
+      id,
+      userId: _userId,
+      createdAt,
+      updatedAt,
+      ...filtered
+    } = userPreferences
+    res.json(filtered)
+  } catch (error) {
+    next(error)
+  }
+}

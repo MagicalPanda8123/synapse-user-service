@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import {
+  getUserPreferencesController,
   getUserProfileController,
   registerUserController,
   updateUserProfileController,
@@ -13,5 +14,8 @@ router.post('/', internalAuthMiddleware, registerUserController)
 
 router.get('/:id', getUserProfileController)
 router.patch('/:id', authMiddleware, updateUserProfileController)
+
+// user preferences endpoints
+router.get('/:id/preferences', authMiddleware, getUserPreferencesController)
 
 export default router
