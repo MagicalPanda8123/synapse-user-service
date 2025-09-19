@@ -27,6 +27,7 @@ model User {
   lastName  String
   gender    Gender // enum: MALE or FEMALE
   bio       String?
+  location  String?
   avatarUrl String?
   isPrivate Boolean  @default(false) // privacy: public(false) / private(true)
   createdAt DateTime @default(now())
