@@ -3,6 +3,7 @@ import {
   getUserPreferencesController,
   getUserProfileController,
   registerUserController,
+  searchUsersController,
   updateUserPreferencesController,
   updateUserProfileController,
 } from '../controllers/index.js'
@@ -14,6 +15,9 @@ import {
 import { userPreferencesSchema } from '../validations/index.js'
 
 const router = Router()
+
+// search users (THE DECLARATION ORDER MATTERS, this one comes before /:id)
+router.get('/search', searchUsersController)
 
 // Internal route for creating a user (accessible only by trusted services)
 router.post('/', internalAuthMiddleware, registerUserController)

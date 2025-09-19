@@ -3,6 +3,7 @@ import {
   createUserPreferences,
   findUserById,
   findUserPreferences,
+  searchUsersByQuery,
   updateUserById,
   updateUserPreferencesByUserId,
 } from '../repositories/index.js'
@@ -56,4 +57,8 @@ export async function getUserPreferences(userId) {
 // update user preferences
 export async function updateUserPreferences(userId, data) {
   return await updateUserPreferencesByUserId(userId, data)
+}
+
+export async function searchUsers(query, page, limit) {
+  return await searchUsersByQuery(query, page, limit)
 }

@@ -2,6 +2,7 @@ import {
   getUserPreferences,
   getUserProfile,
   registerUser,
+  searchUsers,
   updateUserPreferences,
   updateUserProfile,
 } from '../services/index.js'
@@ -163,6 +164,19 @@ export async function updateUserPreferencesController(req, res, next) {
     // filter fields to make response more compact
     const { id, userId: _userId, createdAt, updatedAt, ...filtered } = upadted
     res.json(filtered)
+  } catch (error) {
+    next(error)
+  }
+}
+
+export async function searchUsersController(req, res, next) {
+  try {
+    const { name, page = 1, limit = 10 } = req.query
+    if (!name || name.trim() === '') {
+      return res.status(400).json({ error: 'Missing search query' })
+    }
+    const users = await searchUsers(name, parseInt(page), parseInt(limit))
+    res.json(users)
   } catch (error) {
     next(error)
   }
