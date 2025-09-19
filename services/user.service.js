@@ -1,5 +1,11 @@
-import { createUser, createUserPreferences } from '../repositories/index.js'
+import {
+  createUser,
+  createUserPreferences,
+  findUserById,
+  updateUserById,
+} from '../repositories/index.js'
 
+// create a new user
 export async function registerUser(
   accountId,
   username,
@@ -23,4 +29,19 @@ export async function registerUser(
   await createUserPreferences({ userId: newUser.id })
 
   return newUser
+}
+
+// get user profile
+export async function getUserProfile(userId) {
+  return await findUserById(userId)
+}
+
+// update user profile (partially)
+export async function updateUserProfile(userId, data) {
+  return await updateUserById(userId, data)
+}
+
+// delete user profile
+export async function deleteUserProfile(userId) {
+  return await deleteUserProfile(userId)
 }
