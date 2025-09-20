@@ -1,9 +1,16 @@
 import {
+  createFollowRelationship,
   createUser,
   createUserPreferences,
+  deleteAcceptedFollowRelationship,
+  deletePendingFollowRelationship,
+  findFollowRelationship,
   findUserById,
   findUserPreferences,
+  getFollowersByUserId,
+  getFollowingByUserId,
   searchUsersByQuery,
+  updateFollowRequestStatus,
   updateUserById,
   updateUserPreferencesByUserId,
 } from '../repositories/index.js'
@@ -68,4 +75,45 @@ export async function toggleUserPrivacy(userId) {
   if (!user) return null
 
   return await updateUserById(userId, { isPrivate: !user.isPrivate })
+}
+
+export async function followUser(followerId, followingId) {
+  // check if target user exists
+  const targetUser = await findUserById(followingId)
+  if (!targetUser) return null
+
+  // check if already following
+  const existingFollow = await findFollowRelationship(followerId, followingId)
+  if (existingFollow) {
+    throw new Error('Already requesting or following this user')
+  }
+
+  // determine follow status
+  const status = targetUser.isPrivate ? 'PENDING' : 'ACCEPTED'
+
+  return await createFollowRelationship({ followerId, followingId, status })
+}
+
+export async function acceptFollowRequest(followerId, followingId) {
+  return await updateFollowRequestStatus(followerId, followingId, 'ACCEPTED')
+}
+
+export async function rejectFollowRequest(followerId, followingId) {
+  return await deletePendingFollowRelationship(followerId, followingId)
+}
+
+export async function cancelFollowRequest(followerId, followingId) {
+  return await deletePendingFollowRelationship(followerId, followingId)
+}
+
+export async function unfollowUser(followerId, followingId) {
+  return await deleteAcceptedFollowRelationship(followerId, followingId)
+}
+
+export async function getFollowers(userId, page, limit) {
+  return await getFollowersByUserId(userId, page, limit)
+}
+
+export async function getFollowing(userId, page, limit) {
+  return await getFollowingByUserId(userId, page, limit)
 }
