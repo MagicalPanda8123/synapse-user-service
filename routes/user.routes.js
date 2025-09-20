@@ -13,7 +13,10 @@ import {
   authMiddleware,
   validate,
 } from '../middleware/index.js'
-import { userPreferencesSchema } from '../validations/index.js'
+import {
+  userPreferencesSchema,
+  userProfileUpdateSchema,
+} from '../validations/index.js'
 
 const router = Router()
 
@@ -25,7 +28,12 @@ router.post('/', internalAuthMiddleware, registerUserController)
 
 // user profile
 router.get('/:id', getUserProfileController)
-router.patch('/:id', authMiddleware, updateUserProfileController)
+router.patch(
+  '/:id',
+  authMiddleware,
+  validate(userProfileUpdateSchema),
+  updateUserProfileController
+)
 router.patch('/:id/privacy', authMiddleware, toggleUserPrivacyController)
 
 // user preferences endpoints

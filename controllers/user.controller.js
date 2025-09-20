@@ -62,7 +62,7 @@ export async function getUserProfileController(req, res, next) {
 
 export async function updateUserProfileController(req, res, next) {
   try {
-    const { sub: userId } = req.user
+    const userId = req.user.sub
 
     // check if the sub in the JWT matches with the id passed in the route param
     if (userId != req.params.id) {
@@ -70,24 +70,7 @@ export async function updateUserProfileController(req, res, next) {
         .status(403)
         .json({ error: "Forbidden: cannot update another user's profile" })
     }
-    const data = {}
-    const allowedFields = [
-      'username',
-      'firstName',
-      'lastName',
-      'bio',
-      'location',
-      'avatarUrl',
-      'gender',
-      'isPrivate',
-    ]
-
-    for (const field of allowedFields) {
-      if (req.body[field] !== undefined) {
-        data[field] = req.body[field]
-      }
-    }
-
+    const data = req.validatedBody
     const updatedUser = await updateUserProfile(userId, data)
     res.json(updatedUser)
   } catch (error) {
