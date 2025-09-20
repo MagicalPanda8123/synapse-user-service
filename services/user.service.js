@@ -2,10 +2,13 @@ import {
   createFollowRelationship,
   createUser,
   createUserPreferences,
+  deleteAcceptedFollowRelationship,
+  deletePendingFollowRelationship,
   findFollowRelationship,
   findUserById,
   findUserPreferences,
   searchUsersByQuery,
+  updateFollowRequestStatus,
   updateUserById,
   updateUserPreferencesByUserId,
 } from '../repositories/index.js'
@@ -87,4 +90,17 @@ export async function followUser(followerId, followingId) {
   const status = targetUser.isPrivate ? 'PENDING' : 'ACCEPTED'
 
   return await createFollowRelationship({ followerId, followingId, status })
+}
+
+export async function acceptFollowRequest(followerId, followingId) {
+  return await updateFollowRequestStatus(followerId, followingId, 'ACCEPTED')
+}
+export async function rejectFollowRequest(followerId, followingId) {
+  return await deletePendingFollowRelationship(followerId, followingId)
+}
+export async function cancelFollowRequest(followerId, followingId) {
+  return await deletePendingFollowRelationship(followerId, followingId)
+}
+export async function unfollowUser(followerId, followingId) {
+  return await deleteAcceptedFollowRelationship(followerId, followingId)
 }

@@ -12,3 +12,43 @@ export async function findFollowRelationship(followerId, followingId) {
 export async function createFollowRelationship(data) {
   return await prisma.follow.create({ data })
 }
+
+export async function updateFollowRequestStatus(
+  followerId,
+  followingId,
+  status
+) {
+  const result = await prisma.follow.updateMany({
+    where: { followerId, followingId, status: 'PENDING' },
+    data: { status },
+  })
+
+  return result.count > 0 ? { followerId, followingId, status } : null
+}
+
+export async function deletePendingFollowRelationship(followerId, followingId) {
+  const result = await prisma.follow.deleteMany({
+    where: {
+      followerId,
+      followingId,
+      status: 'PENDING',
+    },
+  })
+
+  return result.count > 0
+}
+
+export async function deleteAcceptedFollowRelationship(
+  followerId,
+  followingId
+) {
+  const result = await prisma.follow.deleteMany({
+    where: {
+      followerId,
+      followingId,
+      status: 'ACCEPTED',
+    },
+  })
+
+  return result.count > 0
+}

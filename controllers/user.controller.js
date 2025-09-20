@@ -1,10 +1,14 @@
 import {
+  acceptFollowRequest,
+  cancelFollowRequest,
   followUser,
   getUserPreferences,
   getUserProfile,
   registerUser,
+  rejectFollowRequest,
   searchUsers,
   toggleUserPrivacy,
+  unfollowUser,
   updateUserPreferences,
   updateUserProfile,
 } from '../services/index.js'
@@ -215,6 +219,74 @@ export async function followUserController(req, res, next) {
     if (error.message === 'Already requesting or following this user') {
       return res.status(409).json({ error: error.message })
     }
+    next(error)
+  }
+}
+
+export async function acceptFollowRequestController(req, res, next) {
+  try {
+    const userId = req.user.sub // the user accepting the request
+    const followerId = req.params.id // the user who requests
+
+    const result = await acceptFollowRequest(followerId, userId)
+
+    if (!result) {
+      return res.status(404).json({ error: 'Follow request not found' })
+    }
+
+    res.json({ message: 'Follow request accepted' })
+  } catch (error) {
+    next(error)
+  }
+}
+
+export async function rejectFollowRequestController(req, res, next) {
+  try {
+    const userId = req.user.sub
+    const followerId = req.params.id
+
+    const result = await rejectFollowRequest(followerId, userId)
+
+    if (!result) {
+      return res.status(404).json({ error: 'Follow request not found' })
+    }
+
+    res.status(204).send() // no content - request (follow record) was deleted
+  } catch (error) {
+    next(error)
+  }
+}
+
+export async function cancelFollowRequestController(req, res, next) {
+  try {
+    const followerId = req.user.sub
+    const followingId = req.params.id
+
+    const result = await cancelFollowRequest(followerId, followingId)
+
+    if (!result) {
+      return res.status(404).json({ error: 'Follow request not found' })
+    }
+
+    res.status(204).send() // no content - request (follow record) was deleted
+  } catch (error) {
+    next(error)
+  }
+}
+
+export async function unfollowController(req, res, next) {
+  try {
+    const followerId = req.user.sub
+    const followingId = req.params.id
+
+    const result = await unfollowUser(followerId, followingId)
+
+    if (!result) {
+      return res.status(404).json({ error: 'Follow relationship not found' })
+    }
+
+    res.status(204).send()
+  } catch (error) {
     next(error)
   }
 }

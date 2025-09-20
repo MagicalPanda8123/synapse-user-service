@@ -1,11 +1,15 @@
 import { Router } from 'express'
 import {
+  acceptFollowRequestController,
+  cancelFollowRequestController,
   followUserController,
   getUserPreferencesController,
   getUserProfileController,
   registerUserController,
+  rejectFollowRequestController,
   searchUsersController,
   toggleUserPrivacyController,
+  unfollowController,
   updateUserPreferencesController,
   updateUserProfileController,
 } from '../controllers/index.js'
@@ -18,6 +22,7 @@ import {
   userPreferencesSchema,
   userProfileUpdateSchema,
 } from '../validations/index.js'
+import { rejectFollowRequest } from '../services/user.service.js'
 
 const router = Router()
 
@@ -50,4 +55,20 @@ router.patch(
 // Social
 router.post('/:id/follow', authMiddleware, followUserController)
 
+router.patch(
+  '/:id/follow/accept',
+  authMiddleware,
+  acceptFollowRequestController
+)
+router.patch(
+  '/:id/follow/reject',
+  authMiddleware,
+  rejectFollowRequestController
+)
+router.delete(
+  '/:id/follow/cancel',
+  authMiddleware,
+  cancelFollowRequestController
+)
+router.delete('/:id/follow', authMiddleware, unfollowController)
 export default router
