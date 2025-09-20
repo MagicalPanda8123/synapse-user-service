@@ -2,15 +2,15 @@ import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 
 async function main() {
-  // Seed users
+  // Seed users (10 normal users + 1 admin)
   await prisma.user.createMany({
     data: [
       {
         id: 'user001',
         accountId: 'acc001',
         username: 'testuser1',
-        firstName: 'Test',
-        lastName: 'UserOne',
+        firstName: 'Ray',
+        lastName: 'Quan',
         gender: 'MALE',
         bio: 'Sample bio 1',
         location: 'Earth',
@@ -48,6 +48,7 @@ async function main() {
         bio: 'Sample bio 4',
         location: 'Jupiter',
         avatarUrl: null,
+        isPrivate: true, // Private account
       },
       {
         id: 'user005',
@@ -58,6 +59,62 @@ async function main() {
         gender: 'MALE',
         bio: 'Sample bio 5',
         location: 'Saturn',
+        avatarUrl: null,
+      },
+      {
+        id: 'user006',
+        accountId: 'acc006',
+        username: 'testuser6',
+        firstName: 'Emma',
+        lastName: 'Davis',
+        gender: 'FEMALE',
+        bio: 'Love photography and travel',
+        location: 'Neptune',
+        avatarUrl: null,
+      },
+      {
+        id: 'user007',
+        accountId: 'acc007',
+        username: 'testuser7',
+        firstName: 'Frank',
+        lastName: 'Miller',
+        gender: 'MALE',
+        bio: 'Software developer',
+        location: 'Pluto',
+        avatarUrl: null,
+        isPrivate: true, // Private account
+      },
+      {
+        id: 'user008',
+        accountId: 'acc008',
+        username: 'testuser8',
+        firstName: 'Grace',
+        lastName: 'Wilson',
+        gender: 'FEMALE',
+        bio: 'Art enthusiast',
+        location: 'Mercury',
+        avatarUrl: null,
+      },
+      {
+        id: 'user009',
+        accountId: 'acc009',
+        username: 'testuser9',
+        firstName: 'Henry',
+        lastName: 'Taylor',
+        gender: 'MALE',
+        bio: 'Music lover',
+        location: 'Uranus',
+        avatarUrl: null,
+      },
+      {
+        id: 'user010',
+        accountId: 'acc010',
+        username: 'testuser10',
+        firstName: 'Ivy',
+        lastName: 'Anderson',
+        gender: 'FEMALE',
+        bio: 'Fitness coach',
+        location: 'Sun',
         avatarUrl: null,
       },
       {
@@ -109,6 +166,36 @@ async function main() {
         extras: { notifications: false },
       },
       {
+        userId: 'user006',
+        theme: 'light',
+        language: 'en',
+        extras: { notifications: true },
+      },
+      {
+        userId: 'user007',
+        theme: 'dark',
+        language: 'en',
+        extras: { notifications: false },
+      },
+      {
+        userId: 'user008',
+        theme: 'light',
+        language: 'es',
+        extras: { notifications: true },
+      },
+      {
+        userId: 'user009',
+        theme: 'dark',
+        language: 'en',
+        extras: { notifications: true },
+      },
+      {
+        userId: 'user010',
+        theme: 'light',
+        language: 'en',
+        extras: { notifications: false },
+      },
+      {
         userId: 'useradmin',
         theme: 'dark',
         language: 'en',
@@ -117,6 +204,48 @@ async function main() {
     ],
     skipDuplicates: true,
   })
+
+  // Seed follow relationships
+  await prisma.follow.createMany({
+    data: [
+      // Accepted follows (public accounts)
+      { followerId: 'user001', followingId: 'user002', status: 'ACCEPTED' },
+      { followerId: 'user001', followingId: 'user003', status: 'ACCEPTED' },
+      { followerId: 'user001', followingId: 'user005', status: 'ACCEPTED' },
+      { followerId: 'user002', followingId: 'user001', status: 'ACCEPTED' },
+      { followerId: 'user002', followingId: 'user006', status: 'ACCEPTED' },
+      { followerId: 'user003', followingId: 'user001', status: 'ACCEPTED' },
+      { followerId: 'user003', followingId: 'user008', status: 'ACCEPTED' },
+      { followerId: 'user005', followingId: 'user002', status: 'ACCEPTED' },
+      { followerId: 'user005', followingId: 'user009', status: 'ACCEPTED' },
+      { followerId: 'user006', followingId: 'user010', status: 'ACCEPTED' },
+      { followerId: 'user008', followingId: 'user009', status: 'ACCEPTED' },
+      { followerId: 'user009', followingId: 'user010', status: 'ACCEPTED' },
+      { followerId: 'user010', followingId: 'user001', status: 'ACCEPTED' },
+
+      // Pending requests (to private accounts)
+      { followerId: 'user001', followingId: 'user004', status: 'PENDING' }, // user001 -> user004 (private)
+      { followerId: 'user002', followingId: 'user007', status: 'PENDING' }, // user002 -> user007 (private)
+      { followerId: 'user005', followingId: 'user004', status: 'PENDING' }, // user005 -> user004 (private)
+      { followerId: 'user006', followingId: 'user007', status: 'PENDING' }, // user006 -> user007 (private)
+
+      // Some accepted follows involving private accounts (already accepted before they went private)
+      { followerId: 'user004', followingId: 'user001', status: 'ACCEPTED' }, // private user004 -> user001
+      { followerId: 'user007', followingId: 'user003', status: 'ACCEPTED' }, // private user007 -> user003
+
+      // Admin follows some users
+      { followerId: 'useradmin', followingId: 'user001', status: 'ACCEPTED' },
+      { followerId: 'useradmin', followingId: 'user002', status: 'ACCEPTED' },
+      { followerId: 'useradmin', followingId: 'user003', status: 'ACCEPTED' },
+    ],
+    skipDuplicates: true,
+  })
+
+  console.log('✅ Seed data created successfully!')
+  console.log('👥 Users: 11 (10 normal + 1 admin)')
+  console.log('🔒 Private accounts: user004, user007')
+  console.log('✅ Accepted follows: Various mutual relationships')
+  console.log('⏳ Pending requests: 4 requests to private accounts')
 }
 
 main()

@@ -19,6 +19,11 @@ enum Gender {
   FEMALE
 }
 
+enum FollowStatus {
+  PENDING
+  ACCEPTED
+}
+
 model User {
   id        String   @id @default(uuid())
   accountId String   @unique // Account.id from Auth Service
@@ -54,11 +59,11 @@ model UserPreferences {
 }
 
 model Follow {
-  id          String   @id @default(uuid())
+  id          String       @id @default(uuid())
   followerId  String
   followingId String
-  createdAt   DateTime @default(now())
-  status      String   @default("accepted") // "pending", "accepted", "rejected"
+  createdAt   DateTime     @default(now())
+  status      FollowStatus @default(ACCEPTED)
 
   // Relations
   follower  User @relation("UserFollowers", fields: [followerId], references: [id])

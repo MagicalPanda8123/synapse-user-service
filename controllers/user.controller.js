@@ -1,9 +1,16 @@
 import {
+  acceptFollowRequest,
+  cancelFollowRequest,
+  followUser,
+  getFollowers,
+  getFollowing,
   getUserPreferences,
   getUserProfile,
   registerUser,
+  rejectFollowRequest,
   searchUsers,
   toggleUserPrivacy,
+  unfollowUser,
   updateUserPreferences,
   updateUserProfile,
 } from '../services/index.js'
@@ -183,6 +190,136 @@ export async function toggleUserPrivacyController(req, res, next) {
       id: updatedUser.id,
       isPrivate: updatedUser.isPrivate,
     })
+  } catch (error) {
+    next(error)
+  }
+}
+
+export async function followUserController(req, res, next) {
+  try {
+    const followerId = req.user.sub
+    const followingId = req.params.id
+
+    // prevent self-following
+    if (followerId === followingId) {
+      return res.status(400).json({ error: 'Cannot follow yourself twin </3' })
+    }
+
+    const result = await followUser(followerId, followingId)
+
+    if (!result) {
+      return res.status(404).json({ error: 'User not found' })
+    }
+
+    const message =
+      result.status === 'PENDING'
+        ? 'Follow request sent'
+        : 'User followed successfully'
+
+    res.status(201).json({ message, status: result.status })
+  } catch (error) {
+    if (error.message === 'Already requesting or following this user') {
+      return res.status(409).json({ error: error.message })
+    }
+    next(error)
+  }
+}
+
+export async function acceptFollowRequestController(req, res, next) {
+  try {
+    const userId = req.user.sub // the user accepting the request
+    const followerId = req.params.id // the user who requests
+
+    const result = await acceptFollowRequest(followerId, userId)
+
+    if (!result) {
+      return res.status(404).json({ error: 'Follow request not found' })
+    }
+
+    res.json({ message: 'Follow request accepted' })
+  } catch (error) {
+    next(error)
+  }
+}
+
+export async function rejectFollowRequestController(req, res, next) {
+  try {
+    const userId = req.user.sub
+    const followerId = req.params.id
+
+    const result = await rejectFollowRequest(followerId, userId)
+
+    if (!result) {
+      return res.status(404).json({ error: 'Follow request not found' })
+    }
+
+    res.status(204).send() // no content - request (follow record) was deleted
+  } catch (error) {
+    next(error)
+  }
+}
+
+export async function cancelFollowRequestController(req, res, next) {
+  try {
+    const followerId = req.user.sub
+    const followingId = req.params.id
+
+    const result = await cancelFollowRequest(followerId, followingId)
+
+    if (!result) {
+      return res.status(404).json({ error: 'Follow request not found' })
+    }
+
+    res.status(204).send() // no content - request (follow record) was deleted
+  } catch (error) {
+    next(error)
+  }
+}
+
+export async function unfollowController(req, res, next) {
+  try {
+    const followerId = req.user.sub
+    const followingId = req.params.id
+
+    const result = await unfollowUser(followerId, followingId)
+
+    if (!result) {
+      return res.status(404).json({ error: 'Follow relationship not found' })
+    }
+
+    res.status(204).send()
+  } catch (error) {
+    next(error)
+  }
+}
+
+export async function getFollowersController(req, res, next) {
+  try {
+    const userId = req.user.sub
+    const { page = 1, limit = 20 } = req.query
+
+    const followers = await getFollowers(
+      userId,
+      parseInt(page),
+      parseInt(limit)
+    )
+    res.json(followers)
+  } catch (error) {
+    next(error)
+  }
+}
+
+export async function getFollowingController(req, res, next) {
+  try {
+    const userId = req.user.sub
+    const { page = 1, limit = 20 } = req.query
+
+    const following = await getFollowing(
+      userId,
+      parseInt(page),
+      parseInt(limit)
+    )
+    res.json(following)
   } catch (error) {
     next(error)
   }
