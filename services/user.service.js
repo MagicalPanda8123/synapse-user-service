@@ -62,3 +62,10 @@ export async function updateUserPreferences(userId, data) {
 export async function searchUsers(query, page, limit) {
   return await searchUsersByQuery(query, page, limit)
 }
+
+export async function toggleUserPrivacy(userId) {
+  const user = await findUserById(userId)
+  if (!user) return null
+
+  return await updateUserById(userId, { isPrivate: !user.isPrivate })
+}

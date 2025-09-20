@@ -3,6 +3,7 @@ import {
   getUserProfile,
   registerUser,
   searchUsers,
+  toggleUserPrivacy,
   updateUserPreferences,
   updateUserProfile,
 } from '../services/index.js'
@@ -61,7 +62,7 @@ export async function getUserProfileController(req, res, next) {
 
 export async function updateUserProfileController(req, res, next) {
   try {
-    const { sub: userId } = req.user
+    const userId = req.user.sub
 
     // check if the sub in the JWT matches with the id passed in the route param
     if (userId != req.params.id) {
@@ -69,24 +70,7 @@ export async function updateUserProfileController(req, res, next) {
         .status(403)
         .json({ error: "Forbidden: cannot update another user's profile" })
     }
-    const data = {}
-    const allowedFields = [
-      'username',
-      'firstName',
-      'lastName',
-      'bio',
-      'location',
-      'avatarUrl',
-      'gender',
-      'isPrivate',
-    ]
-
-    for (const field of allowedFields) {
-      if (req.body[field] !== undefined) {
-        data[field] = req.body[field]
-      }
-    }
-
+    const data = req.validatedBody
     const updatedUser = await updateUserProfile(userId, data)
     res.json(updatedUser)
   } catch (error) {
@@ -177,6 +161,28 @@ export async function searchUsersController(req, res, next) {
     }
     const users = await searchUsers(name, parseInt(page), parseInt(limit))
     res.json(users)
+  } catch (error) {
+    next(error)
+  }
+}
+
+export async function toggleUserPrivacyController(req, res, next) {
+  try {
+    const userId = req.user.sub
+    if (userId !== req.params.id) {
+      return res.status(403).json({
+        error: "Forbidden: Cannot modify other user's privacy setting",
+      })
+    }
+    const updatedUser = await toggleUserPrivacy(userId)
+    if (!updatedUser) {
+      return res.status(404).json({ error: 'User not found' })
+    }
+
+    res.json({
+      id: updatedUser.id,
+      isPrivate: updatedUser.isPrivate,
+    })
   } catch (error) {
     next(error)
   }
