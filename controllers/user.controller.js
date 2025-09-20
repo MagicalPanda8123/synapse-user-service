@@ -3,6 +3,7 @@ import {
   getUserProfile,
   registerUser,
   searchUsers,
+  toggleUserPrivacy,
   updateUserPreferences,
   updateUserProfile,
 } from '../services/index.js'
@@ -177,6 +178,28 @@ export async function searchUsersController(req, res, next) {
     }
     const users = await searchUsers(name, parseInt(page), parseInt(limit))
     res.json(users)
+  } catch (error) {
+    next(error)
+  }
+}
+
+export async function toggleUserPrivacyController(req, res, next) {
+  try {
+    const userId = req.user.sub
+    if (userId !== req.params.id) {
+      return res.status(403).json({
+        error: "Forbidden: Cannot modify other user's privacy setting",
+      })
+    }
+    const updatedUser = await toggleUserPrivacy(userId)
+    if (!updatedUser) {
+      return res.status(404).json({ error: 'User not found' })
+    }
+
+    res.json({
+      id: updatedUser.id,
+      isPrivate: updatedUser.isPrivate,
+    })
   } catch (error) {
     next(error)
   }
