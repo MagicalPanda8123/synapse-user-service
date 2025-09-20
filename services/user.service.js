@@ -1,6 +1,8 @@
 import {
+  createFollowRelationship,
   createUser,
   createUserPreferences,
+  findFollowRelationship,
   findUserById,
   findUserPreferences,
   searchUsersByQuery,
@@ -68,4 +70,21 @@ export async function toggleUserPrivacy(userId) {
   if (!user) return null
 
   return await updateUserById(userId, { isPrivate: !user.isPrivate })
+}
+
+export async function followUser(followerId, followingId) {
+  // check if target user exists
+  const targetUser = await findUserById(followingId)
+  if (!targetUser) return null
+
+  // check if already following
+  const existingFollow = await findFollowRelationship(followerId, followingId)
+  if (existingFollow) {
+    throw new Error('Already requesting or following this user')
+  }
+
+  // determine follow status
+  const status = targetUser.isPrivate ? 'PENDING' : 'ACCEPTED'
+
+  return await createFollowRelationship({ followerId, followingId, status })
 }

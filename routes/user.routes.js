@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import {
+  followUserController,
   getUserPreferencesController,
   getUserProfileController,
   registerUserController,
@@ -45,5 +46,8 @@ router.patch(
   validate(userPreferencesSchema),
   updateUserPreferencesController
 )
+
+// Social
+router.post('/:id/follow', authMiddleware, followUserController)
 
 export default router

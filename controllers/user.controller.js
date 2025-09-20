@@ -1,4 +1,5 @@
 import {
+  followUser,
   getUserPreferences,
   getUserProfile,
   registerUser,
@@ -184,6 +185,36 @@ export async function toggleUserPrivacyController(req, res, next) {
       isPrivate: updatedUser.isPrivate,
     })
   } catch (error) {
+    next(error)
+  }
+}
+
+export async function followUserController(req, res, next) {
+  try {
+    const followerId = req.user.sub
+    const followingId = req.params.id
+
+    // prevent self-following
+    if (followerId === followingId) {
+      return res.status(400).json({ error: 'Cannot follow yourself twin </3' })
+    }
+
+    const result = await followUser(followerId, followingId)
+
+    if (!result) {
+      return res.status(404).json({ error: 'User not found' })
+    }
+
+    const message =
+      result.status === 'PENDING'
+        ? 'Follow request sent'
+        : 'User followed successfully'
+
+    res.status(201).json({ message, status: result.status })
+  } catch (error) {
+    if (error.message === 'Already requesting or following this user') {
+      return res.status(409).json({ error: error.message })
+    }
     next(error)
   }
 }
