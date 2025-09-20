@@ -14,13 +14,20 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Gender {
+  MALE
+  FEMALE
+}
+
 model User {
   id        String   @id @default(uuid())
   accountId String   @unique // Account.id from Auth Service
   username  String   @unique
-  firstName String?
-  lastName  String?
+  firstName String
+  lastName  String
+  gender    Gender // enum: MALE or FEMALE
   bio       String?
+  location  String?
   avatarUrl String?
   isPrivate Boolean  @default(false) // privacy: public(false) / private(true)
   createdAt DateTime @default(now())
