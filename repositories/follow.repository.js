@@ -52,3 +52,58 @@ export async function deleteAcceptedFollowRelationship(
 
   return result.count > 0
 }
+
+export async function getFollowersByUserId(userId, page = 1, limit = 20) {
+  const skip = (page - 1) * limit
+
+  return await prisma.follow.findMany({
+    where: {
+      followingId: userId,
+      status: 'ACCEPTED',
+    },
+    select: {
+      follower: {
+        select: {
+          id: true,
+          username: true,
+          firstName: true,
+          lastName: true,
+          avatarUrl: true,
+        },
+      },
+      createdAt: true,
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+    skip,
+    take: limit,
+  })
+}
+
+export async function getFollowingByUserId(userId, page = 1, limit = 20) {
+  const skip = (page - 1) * limit
+  return await prisma.follow.findMany({
+    where: {
+      followerId: userId,
+      status: 'ACCEPTED',
+    },
+    select: {
+      following: {
+        select: {
+          id: true,
+          username: true,
+          firstName: true,
+          lastName: true,
+          avatarUrl: true,
+        },
+      },
+      createdAt: true,
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+    skip,
+    take: limit,
+  })
+}

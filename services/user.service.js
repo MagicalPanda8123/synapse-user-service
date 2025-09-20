@@ -7,6 +7,8 @@ import {
   findFollowRelationship,
   findUserById,
   findUserPreferences,
+  getFollowersByUserId,
+  getFollowingByUserId,
   searchUsersByQuery,
   updateFollowRequestStatus,
   updateUserById,
@@ -95,12 +97,23 @@ export async function followUser(followerId, followingId) {
 export async function acceptFollowRequest(followerId, followingId) {
   return await updateFollowRequestStatus(followerId, followingId, 'ACCEPTED')
 }
+
 export async function rejectFollowRequest(followerId, followingId) {
   return await deletePendingFollowRelationship(followerId, followingId)
 }
+
 export async function cancelFollowRequest(followerId, followingId) {
   return await deletePendingFollowRelationship(followerId, followingId)
 }
+
 export async function unfollowUser(followerId, followingId) {
   return await deleteAcceptedFollowRelationship(followerId, followingId)
+}
+
+export async function getFollowers(userId, page, limit) {
+  return await getFollowersByUserId(userId, page, limit)
+}
+
+export async function getFollowing(userId, page, limit) {
+  return await getFollowingByUserId(userId, page, limit)
 }

@@ -3,6 +3,8 @@ import {
   acceptFollowRequestController,
   cancelFollowRequestController,
   followUserController,
+  getFollowersController,
+  getFollowingController,
   getUserPreferencesController,
   getUserProfileController,
   registerUserController,
@@ -71,4 +73,8 @@ router.delete(
   cancelFollowRequestController
 )
 router.delete('/:id/follow', authMiddleware, unfollowController)
+
+router.get('/:id/followers', authMiddleware, getFollowersController)
+
+router.get('/:id/following', authMiddleware, getFollowingController)
 export default router

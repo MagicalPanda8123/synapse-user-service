@@ -2,6 +2,8 @@ import {
   acceptFollowRequest,
   cancelFollowRequest,
   followUser,
+  getFollowers,
+  getFollowing,
   getUserPreferences,
   getUserProfile,
   registerUser,
@@ -286,6 +288,38 @@ export async function unfollowController(req, res, next) {
     }
 
     res.status(204).send()
+  } catch (error) {
+    next(error)
+  }
+}
+
+export async function getFollowersController(req, res, next) {
+  try {
+    const userId = req.user.sub
+    const { page = 1, limit = 20 } = req.query
+
+    const followers = await getFollowers(
+      userId,
+      parseInt(page),
+      parseInt(limit)
+    )
+    res.json(followers)
+  } catch (error) {
+    next(error)
+  }
+}
+
+export async function getFollowingController(req, res, next) {
+  try {
+    const userId = req.user.sub
+    const { page = 1, limit = 20 } = req.query
+
+    const following = await getFollowing(
+      userId,
+      parseInt(page),
+      parseInt(limit)
+    )
+    res.json(following)
   } catch (error) {
     next(error)
   }
