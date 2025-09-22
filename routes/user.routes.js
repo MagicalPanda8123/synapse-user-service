@@ -14,6 +14,7 @@ import {
   unfollowController,
   updateUserPreferencesController,
   updateUserProfileController,
+  uploadAvatarController,
 } from '../controllers/index.js'
 import {
   internalAuthMiddleware,
@@ -24,7 +25,7 @@ import {
   userPreferencesSchema,
   userProfileUpdateSchema,
 } from '../validations/index.js'
-import { rejectFollowRequest } from '../services/user.service.js'
+import { avatarUpload } from '../middleware/upload.middleware.js'
 
 const router = Router()
 
@@ -53,6 +54,8 @@ router.patch(
   validate(userPreferencesSchema),
   updateUserPreferencesController
 )
+
+router.post('/me/avatar', authMiddleware, avatarUpload, uploadAvatarController)
 
 // Social
 router.post('/:id/follow', authMiddleware, followUserController)

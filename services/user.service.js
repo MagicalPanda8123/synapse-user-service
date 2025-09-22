@@ -14,6 +14,7 @@ import {
   updateUserById,
   updateUserPreferencesByUserId,
 } from '../repositories/index.js'
+import { uploadAvatarToS3 } from './s3.service.js'
 
 // create a new user
 export async function registerUser(
@@ -116,4 +117,23 @@ export async function getFollowers(userId, page, limit) {
 
 export async function getFollowing(userId, page, limit) {
   return await getFollowingByUserId(userId, page, limit)
+}
+
+export async function uploadUserAvatar(userId, fileBuffer, miemtype) {
+  try {
+    // UPload to S3 first
+    const s3Result = await uploadAvatarToS3(userId, fileBuffer, miemtype)
+
+    // Update user record in DB
+    const updatedUser = await updateUserById(userId, {
+      avatarKey: s3Result.key,
+    })
+
+    return {
+      avatarKey: updatedUser.avatarKey,
+      s3Result,
+    }
+  } catch (error) {
+    throw new Error(`Failed to upload avatar: ${error.message}`)
+  }
 }
