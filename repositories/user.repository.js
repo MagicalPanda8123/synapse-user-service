@@ -33,7 +33,7 @@ export async function searchUsersByQuery(query, page = 1, limit = 10) {
       username: true,
       firstName: true,
       lastName: true,
-      avatarUrl: true,
+      avatarKey: true,
       _count: {
         select: { followers: true },
       },

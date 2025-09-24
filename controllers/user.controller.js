@@ -13,6 +13,7 @@ import {
   unfollowUser,
   updateUserPreferences,
   updateUserProfile,
+  uploadUserAvatar,
 } from '../services/index.js'
 
 export async function registerUserController(req, res, next) {
@@ -61,7 +62,18 @@ export async function getUserProfileController(req, res, next) {
     if (!user) {
       return res.status(404).json({ error: 'User not found' })
     }
-    res.json(user)
+
+    res.json({
+      userId: user.id,
+      username: user.username,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      gender: user.gender,
+      bio: user.bio,
+      location: user.location,
+      avatarUrl: user.avatarUrl,
+      isPrivate: user.isPrivate,
+    })
   } catch (error) {
     next(error)
   }
@@ -320,6 +332,25 @@ export async function getFollowingController(req, res, next) {
       parseInt(limit)
     )
     res.json(following)
+  } catch (error) {
+    next(error)
+  }
+}
+
+export async function uploadAvatarController(req, res, next) {
+  try {
+    const userId = req.user.sub
+    const file = req.file // Already-validated file from the multer middleware
+
+    const result = await uploadUserAvatar(userId, file.buffer, file.mimetype)
+
+    res.json({
+      message: 'Avatar uploaded successfully',
+      avatarKey: result.avatarKey,
+      fileSize: file.size,
+      contentType: file.mimetype,
+      originalName: file.originalName,
+    })
   } catch (error) {
     next(error)
   }

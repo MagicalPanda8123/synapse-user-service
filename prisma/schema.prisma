@@ -33,7 +33,7 @@ model User {
   gender    Gender // enum: MALE or FEMALE
   bio       String?
   location  String?
-  avatarUrl String?
+  avatarKey String?
   isPrivate Boolean  @default(false) // privacy: public(false) / private(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
