@@ -62,7 +62,18 @@ export async function getUserProfileController(req, res, next) {
     if (!user) {
       return res.status(404).json({ error: 'User not found' })
     }
-    res.json(user)
+
+    res.json({
+      userId: user.id,
+      username: user.username,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      gender: user.gender,
+      bio: user.bio,
+      location: user.location,
+      avatarUrl: user.avatarUrl,
+      isPrivate: user.isPrivate,
+    })
   } catch (error) {
     next(error)
   }

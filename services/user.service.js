@@ -4,6 +4,7 @@ import {
   createUserPreferences,
   deleteAcceptedFollowRelationship,
   deletePendingFollowRelationship,
+  deleteUserById,
   findFollowRelationship,
   findUserById,
   findUserPreferences,
@@ -14,7 +15,25 @@ import {
   updateUserById,
   updateUserPreferencesByUserId,
 } from '../repositories/index.js'
-import { uploadAvatarToS3 } from './s3.service.js'
+import { generateAvatarDownloadUrl, uploadAvatarToS3 } from './s3.service.js'
+
+// HELPER FUNCTIONS -----------------------------------------------------------------------------------------
+async function addAvatarUrlToUser(user) {
+  let avatarUrl = null
+  if (user.avatarKey) {
+    avatarUrl = await generateAvatarDownloadUrl(user.avatarKey, 1800)
+  }
+
+  return {
+    ...user,
+    avatarUrl,
+  }
+}
+
+async function addAvatarUrlToUsers(users) {
+  return await Promise.all(users.map(addAvatarUrlToUser))
+}
+// ----------------------------------------------------------------------------------------------------------
 
 // create a new user
 export async function registerUser(
@@ -44,7 +63,8 @@ export async function registerUser(
 
 // get user profile
 export async function getUserProfile(userId) {
-  return await findUserById(userId)
+  const user = await findUserById(userId)
+  return await addAvatarUrlToUser(user)
 }
 
 // update user profile (partially)
@@ -54,7 +74,7 @@ export async function updateUserProfile(userId, data) {
 
 // delete user profile
 export async function deleteUserProfile(userId) {
-  return await deleteUserProfile(userId)
+  return await deleteUserById(userId)
 }
 
 // get user preferences
@@ -68,7 +88,8 @@ export async function updateUserPreferences(userId, data) {
 }
 
 export async function searchUsers(query, page, limit) {
-  return await searchUsersByQuery(query, page, limit)
+  const users = await searchUsersByQuery(query, page, limit)
+  return await addAvatarUrlToUsers(users)
 }
 
 export async function toggleUserPrivacy(userId) {
@@ -112,11 +133,13 @@ export async function unfollowUser(followerId, followingId) {
 }
 
 export async function getFollowers(userId, page, limit) {
-  return await getFollowersByUserId(userId, page, limit)
+  const followers = await getFollowersByUserId(userId, page, limit)
+  return await addAvatarUrlToUsers(followers)
 }
 
 export async function getFollowing(userId, page, limit) {
-  return await getFollowingByUserId(userId, page, limit)
+  const following = await getFollowingByUserId(userId, page, limit)
+  return await addAvatarUrlToUsers(following)
 }
 
 export async function uploadUserAvatar(userId, fileBuffer, miemtype) {
@@ -128,6 +151,8 @@ export async function uploadUserAvatar(userId, fileBuffer, miemtype) {
     const updatedUser = await updateUserById(userId, {
       avatarKey: s3Result.key,
     })
+
+    console.log(s3Result)
 
     return {
       avatarKey: updatedUser.avatarKey,

@@ -34,9 +34,6 @@ export const userProfileUpdateSchema = Joi.object({
   // Location: optional string, can be empty
   location: Joi.string().max(100).allow(''),
 
-  // Avatar URL: must be valid URL if provided, can be null or empty
-  avatarUrl: Joi.string().uri().allow(null, ''),
-
   // Note: isPrivate is intentionally excluded - use separate privacy endpoint
 })
   .min(1)
