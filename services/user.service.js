@@ -7,13 +7,14 @@ import {
   deleteUserById,
   findFollowRelationship,
   findUserById,
+  findUserByIdWithCounts,
   findUserPreferences,
   getFollowersByUserId,
   getFollowingByUserId,
   searchUsersByQuery,
   updateFollowRequestStatus,
   updateUserById,
-  updateUserPreferencesByUserId,
+  updateUserPreferencesByUserId
 } from '../repositories/index.js'
 import { generateAvatarDownloadUrl, uploadAvatarToS3 } from './s3.service.js'
 
@@ -26,23 +27,42 @@ async function addAvatarUrlToUser(user) {
 
   return {
     ...user,
-    avatarUrl,
+    avatarUrl
   }
 }
 
 async function addAvatarUrlToUsers(users) {
   return await Promise.all(users.map(addAvatarUrlToUser))
 }
+
+// Get follow relationship status between two users
+async function getFollowRelationshipStatus(requesterId, targetUserId) {
+  if (!requesterId || requesterId === targetUserId) {
+    return null
+  }
+
+  try {
+    // Check if requester follows target
+    const requesterFollowsTarget = await findFollowRelationship(requesterId, targetUserId)
+
+    // Check if target follows requester
+    const targetFollowsRequester = await findFollowRelationship(targetUserId, requesterId)
+
+    return {
+      isFollowing: requesterFollowsTarget?.status === 'ACCEPTED',
+      isRequested: requesterFollowsTarget?.status === 'PENDING',
+      followsYou: targetFollowsRequester?.status === 'ACCEPTED',
+      requestsYou: targetFollowsRequester?.status === 'PENDING'
+    }
+  } catch (error) {
+    console.error('Error checking follow relationship:', error)
+    return null
+  }
+}
 // ----------------------------------------------------------------------------------------------------------
 
 // create a new user
-export async function registerUser(
-  accountId,
-  username,
-  firstName,
-  lastName,
-  gender
-) {
+export async function registerUser(accountId, username, firstName, lastName, gender) {
   // Ensure gender is uppercase to match Prisma enum
   const genderEnum = typeof gender === 'string' ? gender.toUpperCase() : gender
 
@@ -52,7 +72,7 @@ export async function registerUser(
     username,
     firstName,
     lastName,
-    gender: genderEnum,
+    gender: genderEnum
   })
 
   // create the user's preferences record (with default values)
@@ -62,9 +82,27 @@ export async function registerUser(
 }
 
 // get user profile
-export async function getUserProfile(userId) {
-  const user = await findUserById(userId)
-  return await addAvatarUrlToUser(user)
+export async function getUserProfile(userId, targetUserId) {
+  const user = await findUserByIdWithCounts(targetUserId)
+  if (!user) {
+    return null
+  }
+
+  // Add avatar URL
+  const userWithAvatar = await addAvatarUrlToUser(user)
+
+  // get follow relationship if userId is provided (authenticated user)
+  let relationshipStatus = null
+  if (userId && userId !== targetUserId) {
+    relationshipStatus = await getFollowRelationshipStatus(userId, targetUserId)
+  }
+
+  return {
+    ...userWithAvatar,
+    followerCount: user._count.followers,
+    followingCount: user._count.following,
+    relationshipStatus
+  }
 }
 
 // update user profile (partially)
@@ -149,14 +187,14 @@ export async function uploadUserAvatar(userId, fileBuffer, miemtype) {
 
     // Update user record in DB
     const updatedUser = await updateUserById(userId, {
-      avatarKey: s3Result.key,
+      avatarKey: s3Result.key
     })
 
     console.log(s3Result)
 
     return {
       avatarKey: updatedUser.avatarKey,
-      s3Result,
+      s3Result
     }
   } catch (error) {
     throw new Error(`Failed to upload avatar: ${error.message}`)
