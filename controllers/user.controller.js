@@ -13,38 +13,23 @@ import {
   unfollowUser,
   updateUserPreferences,
   updateUserProfile,
-  uploadUserAvatar,
+  uploadUserAvatar
 } from '../services/index.js'
 
 export async function registerUserController(req, res, next) {
   try {
     // verify internal JWT claims
     const service = req.service
-    if (
-      !service ||
-      service.iss !== 'auth-service' ||
-      !service.permissions ||
-      !service.permissions.includes('users:create')
-    ) {
-      return res
-        .status(403)
-        .json({ error: 'Forbidden: insufficient permissions' })
+    if (!service || service.iss !== 'auth-service' || !service.permissions || !service.permissions.includes('users:create')) {
+      return res.status(403).json({ error: 'Forbidden: insufficient permissions' })
     }
 
     // verify POST payload
     const { account_id, username, first_name, last_name, gender } = req.body
     if (!account_id || !username) {
-      return res
-        .status(400)
-        .json({ error: 'account_id and username are required' })
+      return res.status(400).json({ error: 'account_id and username are required' })
     }
-    const newUser = await registerUser(
-      account_id,
-      username,
-      first_name,
-      last_name,
-      gender
-    )
+    const newUser = await registerUser(account_id, username, first_name, last_name, gender)
     res.json(newUser)
   } catch (error) {
     next(error)
@@ -54,11 +39,12 @@ export async function registerUserController(req, res, next) {
 // get a user profile by id
 export async function getUserProfileController(req, res, next) {
   try {
-    const userId = req.params.id
-    if (!userId) {
+    const targetUserId = req.params.id
+    const userId = req.user?.sub
+    if (!targetUserId) {
       return res.status(400).json({ error: 'userId is required' })
     }
-    const user = await getUserProfile(userId)
+    const user = await getUserProfile(userId, targetUserId)
     if (!user) {
       return res.status(404).json({ error: 'User not found' })
     }
@@ -73,6 +59,9 @@ export async function getUserProfileController(req, res, next) {
       location: user.location,
       avatarUrl: user.avatarUrl,
       isPrivate: user.isPrivate,
+      followerCount: user.followerCount,
+      followingCount: user.followingCount,
+      relationshipStatus: user.relationshipStatus
     })
   } catch (error) {
     next(error)
@@ -85,9 +74,7 @@ export async function updateUserProfileController(req, res, next) {
 
     // check if the sub in the JWT matches with the id passed in the route param
     if (userId != req.params.id) {
-      return res
-        .status(403)
-        .json({ error: "Forbidden: cannot update another user's profile" })
+      return res.status(403).json({ error: "Forbidden: cannot update another user's profile" })
     }
     const data = req.validatedBody
     const updatedUser = await updateUserProfile(userId, data)
@@ -126,24 +113,14 @@ export async function getUserPreferencesController(req, res, next) {
   try {
     const userId = req.user.sub
     if (!userId) {
-      return res
-        .status(401)
-        .json({ error: 'Unauthorized: missing user identifier' })
+      return res.status(401).json({ error: 'Unauthorized: missing user identifier' })
     }
     if (userId !== req.params.id) {
-      return res
-        .status(403)
-        .json({ error: "Forbidden: cannot get another user's profile" })
+      return res.status(403).json({ error: "Forbidden: cannot get another user's profile" })
     }
     const userPreferences = await getUserPreferences(userId)
     // excluding unnecessary fields
-    const {
-      id,
-      userId: _userId,
-      createdAt,
-      updatedAt,
-      ...filtered
-    } = userPreferences
+    const { id, userId: _userId, createdAt, updatedAt, ...filtered } = userPreferences
     res.json(filtered)
   } catch (error) {
     next(error)
@@ -156,9 +133,7 @@ export async function updateUserPreferencesController(req, res, next) {
 
     // check if the sub and the id in the route param match
     if (userId !== req.params.id) {
-      return res
-        .status(403)
-        .json({ error: "Cannot update another user's preferences" })
+      return res.status(403).json({ error: "Cannot update another user's preferences" })
     }
     // get the already validated body (from validate middleware)
     const preferences = req.validatedBody
@@ -190,7 +165,7 @@ export async function toggleUserPrivacyController(req, res, next) {
     const userId = req.user.sub
     if (userId !== req.params.id) {
       return res.status(403).json({
-        error: "Forbidden: Cannot modify other user's privacy setting",
+        error: "Forbidden: Cannot modify other user's privacy setting"
       })
     }
     const updatedUser = await toggleUserPrivacy(userId)
@@ -200,7 +175,7 @@ export async function toggleUserPrivacyController(req, res, next) {
 
     res.json({
       id: updatedUser.id,
-      isPrivate: updatedUser.isPrivate,
+      isPrivate: updatedUser.isPrivate
     })
   } catch (error) {
     next(error)
@@ -223,10 +198,7 @@ export async function followUserController(req, res, next) {
       return res.status(404).json({ error: 'User not found' })
     }
 
-    const message =
-      result.status === 'PENDING'
-        ? 'Follow request sent'
-        : 'User followed successfully'
+    const message = result.status === 'PENDING' ? 'Follow request sent' : 'User followed successfully'
 
     res.status(201).json({ message, status: result.status })
   } catch (error) {
@@ -310,11 +282,7 @@ export async function getFollowersController(req, res, next) {
     const userId = req.user.sub
     const { page = 1, limit = 20 } = req.query
 
-    const followers = await getFollowers(
-      userId,
-      parseInt(page),
-      parseInt(limit)
-    )
+    const followers = await getFollowers(userId, parseInt(page), parseInt(limit))
     res.json(followers)
   } catch (error) {
     next(error)
@@ -326,11 +294,7 @@ export async function getFollowingController(req, res, next) {
     const userId = req.user.sub
     const { page = 1, limit = 20 } = req.query
 
-    const following = await getFollowing(
-      userId,
-      parseInt(page),
-      parseInt(limit)
-    )
+    const following = await getFollowing(userId, parseInt(page), parseInt(limit))
     res.json(following)
   } catch (error) {
     next(error)
@@ -349,7 +313,7 @@ export async function uploadAvatarController(req, res, next) {
       avatarKey: result.avatarKey,
       fileSize: file.size,
       contentType: file.mimetype,
-      originalName: file.originalName,
+      originalName: file.originalName
     })
   } catch (error) {
     next(error)

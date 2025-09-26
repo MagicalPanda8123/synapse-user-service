@@ -129,7 +129,7 @@ async function main() {
         avatarKey: null,
       },
     ],
-    skipDuplicates: true,
+    skipDuplicates: true
   })
 
   // Seed user preferences
@@ -139,70 +139,70 @@ async function main() {
         userId: 'user001',
         theme: 'light',
         language: 'en',
-        extras: { notifications: true },
+        extras: { notifications: true }
       },
       {
         userId: 'user002',
         theme: 'dark',
         language: 'vi',
-        extras: { notifications: false },
+        extras: { notifications: false }
       },
       {
         userId: 'user003',
         theme: 'light',
         language: 'en',
-        extras: { notifications: true },
+        extras: { notifications: true }
       },
       {
         userId: 'user004',
         theme: 'dark',
         language: 'en',
-        extras: { notifications: true },
+        extras: { notifications: true }
       },
       {
         userId: 'user005',
         theme: 'light',
         language: 'fr',
-        extras: { notifications: false },
+        extras: { notifications: false }
       },
       {
         userId: 'user006',
         theme: 'light',
         language: 'en',
-        extras: { notifications: true },
+        extras: { notifications: true }
       },
       {
         userId: 'user007',
         theme: 'dark',
         language: 'en',
-        extras: { notifications: false },
+        extras: { notifications: false }
       },
       {
         userId: 'user008',
         theme: 'light',
         language: 'es',
-        extras: { notifications: true },
+        extras: { notifications: true }
       },
       {
         userId: 'user009',
         theme: 'dark',
         language: 'en',
-        extras: { notifications: true },
+        extras: { notifications: true }
       },
       {
         userId: 'user010',
         theme: 'light',
         language: 'en',
-        extras: { notifications: false },
+        extras: { notifications: false }
       },
       {
         userId: 'useradmin',
         theme: 'dark',
         language: 'en',
-        extras: { notifications: true, admin: true },
-      },
+        extras: { notifications: true, admin: true }
+      }
     ],
-    skipDuplicates: true,
+    skipDuplicates: true
   })
 
   // Seed follow relationships
@@ -236,9 +236,9 @@ async function main() {
       // Admin follows some users
       { followerId: 'useradmin', followingId: 'user001', status: 'ACCEPTED' },
       { followerId: 'useradmin', followingId: 'user002', status: 'ACCEPTED' },
-      { followerId: 'useradmin', followingId: 'user003', status: 'ACCEPTED' },
+      { followerId: 'useradmin', followingId: 'user003', status: 'ACCEPTED' }
     ],
-    skipDuplicates: true,
+    skipDuplicates: true
   })
 
   console.log('✅ Seed data created successfully!')
