@@ -14,7 +14,7 @@ async function main() {
         gender: 'MALE',
         bio: 'Sample bio 1',
         location: 'Earth',
-        avatarUrl: null,
+        avatarKey: null,
       },
       {
         id: 'user002',
@@ -25,7 +25,7 @@ async function main() {
         gender: 'FEMALE',
         bio: 'Sample bio 2',
         location: 'Mars',
-        avatarUrl: null,
+        avatarKey: null,
       },
       {
         id: 'user003',
@@ -36,7 +36,7 @@ async function main() {
         gender: 'MALE',
         bio: 'Sample bio 3',
         location: 'Venus',
-        avatarUrl: null,
+        avatarKey: null,
       },
       {
         id: 'user004',
@@ -47,7 +47,7 @@ async function main() {
         gender: 'FEMALE',
         bio: 'Sample bio 4',
         location: 'Jupiter',
-        avatarUrl: null,
+        avatarKey: null,
         isPrivate: true, // Private account
       },
       {
@@ -59,7 +59,7 @@ async function main() {
         gender: 'MALE',
         bio: 'Sample bio 5',
         location: 'Saturn',
-        avatarUrl: null,
+        avatarKey: null,
       },
       {
         id: 'user006',
@@ -70,7 +70,7 @@ async function main() {
         gender: 'FEMALE',
         bio: 'Love photography and travel',
         location: 'Neptune',
-        avatarUrl: null,
+        avatarKey: null,
       },
       {
         id: 'user007',
@@ -81,7 +81,7 @@ async function main() {
         gender: 'MALE',
         bio: 'Software developer',
         location: 'Pluto',
-        avatarUrl: null,
+        avatarKey: null,
         isPrivate: true, // Private account
       },
       {
@@ -93,7 +93,7 @@ async function main() {
         gender: 'FEMALE',
         bio: 'Art enthusiast',
         location: 'Mercury',
-        avatarUrl: null,
+        avatarKey: null,
       },
       {
         id: 'user009',
@@ -104,7 +104,7 @@ async function main() {
         gender: 'MALE',
         bio: 'Music lover',
         location: 'Uranus',
-        avatarUrl: null,
+        avatarKey: null,
       },
       {
         id: 'user010',
@@ -115,7 +115,7 @@ async function main() {
         gender: 'FEMALE',
         bio: 'Fitness coach',
         location: 'Sun',
-        avatarUrl: null,
+        avatarKey: null,
       },
       {
         id: 'useradmin',
@@ -126,7 +126,7 @@ async function main() {
         gender: 'MALE',
         bio: 'admin bio',
         location: 'somewhere in 2017',
-        avatarUrl: null,
+        avatarKey: null,
       },
     ],
     skipDuplicates: true,
