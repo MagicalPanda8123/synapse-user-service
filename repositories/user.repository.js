@@ -8,6 +8,20 @@ export async function findUserById(id) {
   return await prisma.user.findUnique({ where: { id } })
 }
 
+export async function findUserByIdWithCounts(id) {
+  return await prisma.user.findUnique({
+    where: { id },
+    include: {
+      _count: {
+        select: {
+          followers: { where: { status: 'ACCEPTED' } },
+          following: { where: { status: 'ACCEPTED' } }
+        }
+      }
+    }
+  })
+}
+
 export async function updateUserById(id, data) {
   return await prisma.user.update({ where: { id }, data })
 }
@@ -25,8 +39,8 @@ export async function searchUsersByQuery(query, page = 1, limit = 10) {
       OR: [
         { username: { contains: query, mode: 'insensitive' } },
         { firstName: { contains: query, mode: 'insensitive' } },
-        { lastName: { contains: query, mode: 'insensitive' } },
-      ],
+        { lastName: { contains: query, mode: 'insensitive' } }
+      ]
     },
     select: {
       id: true,
@@ -35,15 +49,15 @@ export async function searchUsersByQuery(query, page = 1, limit = 10) {
       lastName: true,
       avatarKey: true,
       _count: {
-        select: { followers: true },
-      },
+        select: { followers: true }
+      }
     },
     orderBy: {
       followers: {
-        _count: 'desc',
-      },
+        _count: 'desc'
+      }
     },
     skip,
-    take: limit,
+    take: limit
   })
 }
