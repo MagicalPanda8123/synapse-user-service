@@ -36,7 +36,7 @@ async function main() {
         gender: 'MALE',
         bio: 'Sample bio 1',
         location: 'Earth',
-        avatarKey: null
+        avatarKey: null,
       },
       {
         id: 'user002',
@@ -47,7 +47,7 @@ async function main() {
         gender: 'FEMALE',
         bio: 'Sample bio 2',
         location: 'Mars',
-        avatarKey: null
+        avatarKey: null,
       },
       {
         id: 'user003',
@@ -58,7 +58,7 @@ async function main() {
         gender: 'MALE',
         bio: 'Sample bio 3',
         location: 'Venus',
-        avatarKey: null
+        avatarKey: null,
       },
       {
         id: 'user004',
@@ -70,7 +70,7 @@ async function main() {
         bio: 'Sample bio 4',
         location: 'Jupiter',
         avatarKey: null,
-        isPrivate: true // Private account
+        isPrivate: true, // Private account
       },
       {
         id: 'user005',
@@ -81,7 +81,7 @@ async function main() {
         gender: 'MALE',
         bio: 'Sample bio 5',
         location: 'Saturn',
-        avatarKey: null
+        avatarKey: null,
       },
       {
         id: 'user006',
@@ -92,7 +92,7 @@ async function main() {
         gender: 'FEMALE',
         bio: 'Love photography and travel',
         location: 'Neptune',
-        avatarKey: null
+        avatarKey: null,
       },
       {
         id: 'user007',
@@ -104,7 +104,7 @@ async function main() {
         bio: 'Software developer',
         location: 'Pluto',
         avatarKey: null,
-        isPrivate: true // Private account
+        isPrivate: true, // Private account
       },
       {
         id: 'user008',
@@ -115,7 +115,7 @@ async function main() {
         gender: 'FEMALE',
         bio: 'Art enthusiast',
         location: 'Mercury',
-        avatarKey: null
+        avatarKey: null,
       },
       {
         id: 'user009',
@@ -126,7 +126,7 @@ async function main() {
         gender: 'MALE',
         bio: 'Music lover',
         location: 'Uranus',
-        avatarKey: null
+        avatarKey: null,
       },
       {
         id: 'user010',
@@ -137,7 +137,7 @@ async function main() {
         gender: 'FEMALE',
         bio: 'Fitness coach',
         location: 'Sun',
-        avatarKey: null
+        avatarKey: null,
       },
       {
         id: 'useradmin',
@@ -148,10 +148,10 @@ async function main() {
         gender: 'MALE',
         bio: 'admin bio',
         location: 'somewhere in 2017',
-        avatarKey: null
-      }
+        avatarKey: null,
+      },
     ],
-    skipDuplicates: true
+    skipDuplicates: true,
   })
 
   // Seed user preferences
@@ -173,70 +173,70 @@ async function main() {
         userId: 'user001',
         theme: 'light',
         language: 'en',
-        extras: { notifications: true }
+        extras: { notifications: true },
       },
       {
         userId: 'user002',
         theme: 'dark',
         language: 'vi',
-        extras: { notifications: false }
+        extras: { notifications: false },
       },
       {
         userId: 'user003',
         theme: 'light',
         language: 'en',
-        extras: { notifications: true }
+        extras: { notifications: true },
       },
       {
         userId: 'user004',
         theme: 'dark',
         language: 'en',
-        extras: { notifications: true }
+        extras: { notifications: true },
       },
       {
         userId: 'user005',
         theme: 'light',
         language: 'fr',
-        extras: { notifications: false }
+        extras: { notifications: false },
       },
       {
         userId: 'user006',
         theme: 'light',
         language: 'en',
-        extras: { notifications: true }
+        extras: { notifications: true },
       },
       {
         userId: 'user007',
         theme: 'dark',
         language: 'en',
-        extras: { notifications: false }
+        extras: { notifications: false },
       },
       {
         userId: 'user008',
         theme: 'light',
         language: 'es',
-        extras: { notifications: true }
+        extras: { notifications: true },
       },
       {
         userId: 'user009',
         theme: 'dark',
         language: 'en',
-        extras: { notifications: true }
+        extras: { notifications: true },
       },
       {
         userId: 'user010',
         theme: 'light',
         language: 'en',
-        extras: { notifications: false }
+        extras: { notifications: false },
       },
       {
         userId: 'useradmin',
         theme: 'dark',
         language: 'en',
-        extras: { notifications: true, admin: true }
-      }
+        extras: { notifications: true, admin: true },
+      },
     ],
-    skipDuplicates: true
+    skipDuplicates: true,
   })
 
   // Seed follow relationships
@@ -270,9 +270,9 @@ async function main() {
       // Admin follows some users
       { followerId: 'useradmin', followingId: 'user001', status: 'ACCEPTED' },
       { followerId: 'useradmin', followingId: 'user002', status: 'ACCEPTED' },
-      { followerId: 'useradmin', followingId: 'user003', status: 'ACCEPTED' }
+      { followerId: 'useradmin', followingId: 'user003', status: 'ACCEPTED' },
     ],
-    skipDuplicates: true
+    skipDuplicates: true,
   })
 
   console.log('✅ Seed data created successfully!')
