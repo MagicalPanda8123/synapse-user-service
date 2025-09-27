@@ -5,6 +5,7 @@ import {
   followUserController,
   getFollowersController,
   getFollowingController,
+  getPendingFollowRequestsController,
   getUserPreferencesController,
   getUserProfileController,
   registerUserController,
@@ -24,6 +25,8 @@ const router = Router()
 
 // search users (THE DECLARATION ORDER MATTERS, this one comes before /:id)
 router.get('/search', searchUsersController)
+
+router.get('/me/follow-requests', authMiddleware, getPendingFollowRequestsController)
 
 // Internal route for creating a user (accessible only by trusted services)
 router.post('/', internalAuthMiddleware, registerUserController)

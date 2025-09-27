@@ -11,6 +11,8 @@ import {
   findUserPreferences,
   getFollowersByUserId,
   getFollowingByUserId,
+  getPendingRequestCountByUserId,
+  getPendingRequestsByUserId,
   searchUsersByQuery,
   updateFollowRequestStatus,
   updateUserById,
@@ -180,6 +182,30 @@ export async function getFollowing(userId, page, limit) {
   return await addAvatarUrlToUsers(following)
 }
 
+// Get pending follow requests for a user
+export async function getPendingFollowRequests(userId, page = 1, limit = 10) {
+  const requests = await getPendingRequestsByUserId(userId, page, limit)
+  const totalCount = await getPendingRequestCountByUserId(userId)
+
+  // Add avatar URLs to the requesters
+  const requestsWithAvatars = await Promise.all(
+    requests.map(async (request) => {
+      const followerWithAvatar = await addAvatarUrlToUser(request.follower)
+      return {
+        id: request.id,
+        createdAt: request.createdAt,
+        requester: followerWithAvatar
+      }
+    })
+  )
+
+  return {
+    requests: requestsWithAvatars,
+    totalCount,
+    currentPage: page,
+    totalCount
+  }
+}
 export async function uploadUserAvatar(userId, fileBuffer, miemtype) {
   try {
     // UPload to S3 first

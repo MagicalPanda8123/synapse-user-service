@@ -6,6 +6,28 @@ async function main() {
   await prisma.user.createMany({
     data: [
       {
+        id: 'user999',
+        accountId: 'acc999',
+        username: 'nmkhangg_',
+        firstName: 'Khang',
+        lastName: 'Nguyen',
+        gender: 'MALE',
+        bio: 'I just be... wondering </3',
+        location: 'Alberta',
+        avatarKey: null
+      },
+      {
+        id: 'user888',
+        accountId: 'acc888',
+        username: 'dhlananh',
+        firstName: 'Lan Anh',
+        lastName: 'Duong Hoang',
+        gender: 'FEMALE',
+        bio: 'sample bio',
+        location: 'Mars',
+        avatarKey: null
+      },
+      {
         id: 'user001',
         accountId: 'acc001',
         username: 'testuser1',
@@ -135,6 +157,18 @@ async function main() {
   // Seed user preferences
   await prisma.userPreferences.createMany({
     data: [
+      {
+        userId: 'user999',
+        theme: 'light',
+        language: 'en',
+        extras: { notifications: true }
+      },
+      {
+        userId: 'user888',
+        theme: 'dark',
+        language: 'vi',
+        extras: { notifications: false }
+      },
       {
         userId: 'user001',
         theme: 'light',

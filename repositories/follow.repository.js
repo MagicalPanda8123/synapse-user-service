@@ -74,6 +74,43 @@ export async function getFollowersByUserId(userId, page = 1, limit = 20) {
   })
 }
 
+export async function getPendingRequestsByUserId(userId, page = 1, limit = 10) {
+  const skip = (page - 1) * limit
+
+  return await prisma.follow.findMany({
+    where: {
+      followingId: userId,
+      status: 'PENDING'
+    },
+    include: {
+      follower: {
+        select: {
+          id: true,
+          username: true,
+          firstName: true,
+          lastName: true,
+          avatarKey: true
+        }
+      }
+    },
+    orderBy: {
+      createdAt: 'desc'
+    },
+    skip,
+    take: limit
+  })
+}
+
+// Get count of pending follow requests for a user
+export async function getPendingRequestCountByUserId(userId) {
+  return await prisma.follow.count({
+    where: {
+      followingId: userId,
+      status: 'PENDING'
+    }
+  })
+}
+
 export async function getFollowingByUserId(userId, page = 1, limit = 20) {
   const skip = (page - 1) * limit
   return await prisma.follow.findMany({
