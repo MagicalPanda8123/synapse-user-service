@@ -4,6 +4,7 @@ import {
   followUser,
   getFollowers,
   getFollowing,
+  getPendingFollowRequests,
   getUserPreferences,
   getUserProfile,
   registerUser,
@@ -314,6 +315,30 @@ export async function uploadAvatarController(req, res, next) {
       fileSize: file.size,
       contentType: file.mimetype,
       originalName: file.originalName
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
+// Get pending follow requests for the authenticated user
+export async function getPendingFollowRequestsController(req, res, next) {
+  try {
+    const userId = req.user.sub
+
+    // Get pagination parameters
+    const page = parseInt(req.query.page) || 1
+    const limit = Math.min(parseInt(req.query.limit) || 10, 50) // Max 50 per page
+
+    if (page < 1 || limit < 1) {
+      return res.status(400).json({ error: 'Invalid pagination parameters' })
+    }
+
+    const result = await getPendingFollowRequests(userId, page, limit)
+
+    res.json({
+      message: 'Pending follow requests retrieved successfully',
+      data: result
     })
   } catch (error) {
     next(error)
