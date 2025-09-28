@@ -40,8 +40,8 @@ model User {
 
   // Relations
   preferences UserPreferences?
-  followers   Follow[]         @relation("UserFollowers")
-  following   Follow[]         @relation("UserFollowing")
+  followers   Follow[]         @relation("UserFollowing")
+  following   Follow[]         @relation("UserFollowers")
   auditLogs   AuditLog[]
 }
 

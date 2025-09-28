@@ -1,5 +1,5 @@
 import {
-  acceptFollowRequest,
+  acceptFollowRequestById,
   cancelFollowRequest,
   followUser,
   getFollowers,
@@ -8,7 +8,7 @@ import {
   getUserPreferences,
   getUserProfile,
   registerUser,
-  rejectFollowRequest,
+  rejectFollowRequestById,
   searchUsers,
   toggleUserPrivacy,
   unfollowUser,
@@ -244,17 +244,21 @@ export async function followUserController(req, res, next) {
 
 export async function acceptFollowRequestController(req, res, next) {
   try {
-    const userId = req.user.sub // the user accepting the request
-    const followerId = req.params.id // the user who requests
+    const userId = req.user.sub
+    const followId = req.params.id
 
-    const result = await acceptFollowRequest(followerId, userId)
-
-    if (!result) {
+    const result = await acceptFollowRequestById(userId, followId)
+    if (!result)
       return res.status(404).json({ error: 'Follow request not found' })
-    }
 
     res.json({ message: 'Follow request accepted' })
   } catch (error) {
+    if (error.message.startsWith('Forbidden')) {
+      return res.status(403).json({ error: error.message })
+    }
+    if (error.message.startsWith('Cannot accept')) {
+      return res.status(400).json({ error: error.message })
+    }
     next(error)
   }
 }
@@ -262,16 +266,20 @@ export async function acceptFollowRequestController(req, res, next) {
 export async function rejectFollowRequestController(req, res, next) {
   try {
     const userId = req.user.sub
-    const followerId = req.params.id
+    const followId = req.params.id
 
-    const result = await rejectFollowRequest(followerId, userId)
-
-    if (!result) {
+    const result = await rejectFollowRequestById(userId, followId)
+    if (!result)
       return res.status(404).json({ error: 'Follow request not found' })
-    }
 
-    res.status(204).send() // no content - request (follow record) was deleted
+    res.status(204).send()
   } catch (error) {
+    if (error.message.startsWith('Forbidden')) {
+      return res.status(403).json({ error: error.message })
+    }
+    if (error.message.startsWith('Cannot reject')) {
+      return res.status(400).json({ error: error.message })
+    }
     next(error)
   }
 }
@@ -378,7 +386,7 @@ export async function getPendingFollowRequestsController(req, res, next) {
 
     res.json({
       message: 'Pending follow requests retrieved successfully',
-      data: result
+      data: result,
     })
   } catch (error) {
     next(error)
