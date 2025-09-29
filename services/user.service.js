@@ -19,9 +19,10 @@ import {
   updateFollowRequestStatus,
   updateFollowStatusById,
   updateUserById,
-  updateUserPreferencesByUserId,
+  updateUserPreferencesByUserId
 } from '../repositories/index.js'
 import { generateAvatarDownloadUrl, uploadAvatarToS3 } from './s3.service.js'
+import * as userRepo from '../repositories/user.repository.js'
 
 // HELPER FUNCTIONS -----------------------------------------------------------------------------------------
 async function addAvatarUrlToUser(user) {
@@ -32,7 +33,7 @@ async function addAvatarUrlToUser(user) {
 
   return {
     ...user,
-    avatarUrl,
+    avatarUrl
   }
 }
 
@@ -48,22 +49,16 @@ async function getFollowRelationshipStatus(requesterId, targetUserId) {
 
   try {
     // Check if requester follows target
-    const requesterFollowsTarget = await findFollowRelationship(
-      requesterId,
-      targetUserId
-    )
+    const requesterFollowsTarget = await findFollowRelationship(requesterId, targetUserId)
 
     // Check if target follows requester
-    const targetFollowsRequester = await findFollowRelationship(
-      targetUserId,
-      requesterId
-    )
+    const targetFollowsRequester = await findFollowRelationship(targetUserId, requesterId)
 
     return {
       isFollowing: requesterFollowsTarget?.status === 'ACCEPTED',
       isRequested: requesterFollowsTarget?.status === 'PENDING',
       followsYou: targetFollowsRequester?.status === 'ACCEPTED',
-      requestsYou: targetFollowsRequester?.status === 'PENDING',
+      requestsYou: targetFollowsRequester?.status === 'PENDING'
     }
   } catch (error) {
     console.error('Error checking follow relationship:', error)
@@ -73,13 +68,7 @@ async function getFollowRelationshipStatus(requesterId, targetUserId) {
 // ----------------------------------------------------------------------------------------------------------
 
 // create a new user
-export async function registerUser(
-  accountId,
-  username,
-  firstName,
-  lastName,
-  gender
-) {
+export async function registerUser(accountId, username, firstName, lastName, gender) {
   // Ensure gender is uppercase to match Prisma enum
   const genderEnum = typeof gender === 'string' ? gender.toUpperCase() : gender
 
@@ -89,7 +78,7 @@ export async function registerUser(
     username,
     firstName,
     lastName,
-    gender: genderEnum,
+    gender: genderEnum
   })
 
   // create the user's preferences record (with default values)
@@ -100,13 +89,13 @@ export async function registerUser(
 
 // get user profile
 export async function getUserProfile(userId, targetUserId) {
-  const user = await findUserByIdWithCounts(targetUserId)
+  const user = await userRepo.findUserByIdWithCounts(targetUserId)
   if (!user) {
     return null
   }
 
-  // Add avatar URL
-  const userWithAvatar = await addAvatarUrlToUser(user)
+  // Retrieve avatar signed-URL (if exists)
+  let avatarUrl = await generateAvatarDownloadUrl(user.avatarKey, 1800)
 
   // get follow relationship if userId is provided (authenticated user)
   let relationshipStatus = null
@@ -115,16 +104,37 @@ export async function getUserProfile(userId, targetUserId) {
   }
 
   return {
-    ...userWithAvatar,
+    id: user.id,
+    username: user.username,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    gender: user.gender,
+    bio: user.bio,
+    location: user.location,
+    avatarUrl,
+    isPrivate: user.isPrivate,
     followerCount: user._count.followers,
     followingCount: user._count.following,
-    relationshipStatus,
+    relationshipStatus
   }
 }
 
 // update user profile (partially)
 export async function updateUserProfile(userId, data) {
-  return await updateUserById(userId, data)
+  const updatedUser = await updateUserById(userId, data)
+  const avatarUrl = await generateAvatarDownloadUrl(updatedUser.avatarKey, 1800)
+
+  return {
+    id: updatedUser.id,
+    username: updatedUser.username,
+    firstName: updatedUser.firstName,
+    lastName: updatedUser.lastName,
+    gender: updatedUser.gender,
+    bio: updatedUser.bio,
+    location: updatedUser.location,
+    avatarUrl,
+    isPrivate: updatedUser.isPrivate
+  }
 }
 
 // delete user profile
@@ -134,7 +144,9 @@ export async function deleteUserProfile(userId) {
 
 // get user preferences
 export async function getUserPreferences(userId) {
-  return await findUserPreferences(userId)
+  const userPreferences = await findUserPreferences(userId)
+  const { id, userId: _userId, createdAt, updatedAt, ...filtered } = userPreferences
+  return filtered
 }
 
 // update user preferences
@@ -151,7 +163,11 @@ export async function toggleUserPrivacy(userId) {
   const user = await findUserById(userId)
   if (!user) return null
 
-  return await updateUserById(userId, { isPrivate: !user.isPrivate })
+  const updatedUser = await updateUserById(userId, { isPrivate: !user.isPrivate })
+  return {
+    id: updatedUser.id,
+    isPrivate: updatedUser.isPrivate
+  }
 }
 
 export async function followUser(followerId, followingId) {
@@ -174,8 +190,7 @@ export async function followUser(followerId, followingId) {
 export async function acceptFollowRequestById(userId, followId) {
   const follow = await findFollowById(followId)
   if (!follow) return null
-  if (follow.followingId !== userId)
-    throw new Error('Forbidden: not yours to decide twin')
+  if (follow.followingId !== userId) throw new Error('Forbidden: not yours to decide twin')
   if (follow.status !== 'PENDING') throw new Error("it ain't pending bro")
   return await updateFollowStatusById(followId, 'ACCEPTED')
 }
@@ -183,10 +198,8 @@ export async function acceptFollowRequestById(userId, followId) {
 export async function rejectFollowRequestById(userId, followId) {
   const follow = await findFollowById(followId)
   if (!follow) return null
-  if (follow.followingId !== userId)
-    throw new Error('Forbidden: not your follow request')
-  if (follow.status !== 'PENDING')
-    throw new Error('Cannot reject a non-pending request')
+  if (follow.followingId !== userId) throw new Error('Forbidden: not your follow request')
+  if (follow.status !== 'PENDING') throw new Error('Cannot reject a non-pending request')
   await deleteFollowById(followId)
   return true
 }
@@ -221,7 +234,7 @@ export async function getPendingFollowRequests(userId, page = 1, limit = 10) {
       return {
         id: request.id,
         createdAt: request.createdAt,
-        requester: followerWithAvatar,
+        requester: followerWithAvatar
       }
     })
   )
@@ -230,7 +243,7 @@ export async function getPendingFollowRequests(userId, page = 1, limit = 10) {
     requests: requestsWithAvatars,
     totalCount,
     currentPage: page,
-    totalCount,
+    totalCount
   }
 }
 export async function uploadUserAvatar(userId, fileBuffer, miemtype) {
@@ -240,14 +253,14 @@ export async function uploadUserAvatar(userId, fileBuffer, miemtype) {
 
     // Update user record in DB
     const updatedUser = await updateUserById(userId, {
-      avatarKey: s3Result.key,
+      avatarKey: s3Result.key
     })
 
     console.log(s3Result)
 
     return {
       avatarKey: updatedUser.avatarKey,
-      s3Result,
+      s3Result
     }
   } catch (error) {
     throw new Error(`Failed to upload avatar: ${error.message}`)
