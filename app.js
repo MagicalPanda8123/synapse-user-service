@@ -26,8 +26,7 @@ const corsOptions = {
 
 // Security middlewares
 app.use(helmet())
-// app.use(cors({ origin: '*' }))
-app.use(cors(corsOptions))
+app.use(cors({ origin: 'http://localhost:3000', credentials: true }))
 
 // built-in middlewares
 app.use(express.json())

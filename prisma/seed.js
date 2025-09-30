@@ -6,6 +6,28 @@ async function main() {
   await prisma.user.createMany({
     data: [
       {
+        id: 'user999',
+        accountId: 'acc999',
+        username: 'nmkhangg_',
+        firstName: 'Khang',
+        lastName: 'Nguyen',
+        gender: 'MALE',
+        bio: 'I just be... wondering </3',
+        location: 'Alberta',
+        avatarKey: null
+      },
+      {
+        id: 'user888',
+        accountId: 'acc888',
+        username: 'dhlananh',
+        firstName: 'Lan Anh',
+        lastName: 'Duong Hoang',
+        gender: 'FEMALE',
+        bio: 'sample bio',
+        location: 'Mars',
+        avatarKey: null
+      },
+      {
         id: 'user001',
         accountId: 'acc001',
         username: 'testuser1',
@@ -129,80 +151,92 @@ async function main() {
         avatarKey: null,
       },
     ],
-    skipDuplicates: true
+    skipDuplicates: true,
   })
 
   // Seed user preferences
   await prisma.userPreferences.createMany({
     data: [
       {
-        userId: 'user001',
+        userId: 'user999',
         theme: 'light',
         language: 'en',
         extras: { notifications: true }
       },
       {
-        userId: 'user002',
+        userId: 'user888',
         theme: 'dark',
         language: 'vi',
         extras: { notifications: false }
       },
       {
+        userId: 'user001',
+        theme: 'light',
+        language: 'en',
+        extras: { notifications: true },
+      },
+      {
+        userId: 'user002',
+        theme: 'dark',
+        language: 'vi',
+        extras: { notifications: false },
+      },
+      {
         userId: 'user003',
         theme: 'light',
         language: 'en',
-        extras: { notifications: true }
+        extras: { notifications: true },
       },
       {
         userId: 'user004',
         theme: 'dark',
         language: 'en',
-        extras: { notifications: true }
+        extras: { notifications: true },
       },
       {
         userId: 'user005',
         theme: 'light',
         language: 'fr',
-        extras: { notifications: false }
+        extras: { notifications: false },
       },
       {
         userId: 'user006',
         theme: 'light',
         language: 'en',
-        extras: { notifications: true }
+        extras: { notifications: true },
       },
       {
         userId: 'user007',
         theme: 'dark',
         language: 'en',
-        extras: { notifications: false }
+        extras: { notifications: false },
       },
       {
         userId: 'user008',
         theme: 'light',
         language: 'es',
-        extras: { notifications: true }
+        extras: { notifications: true },
       },
       {
         userId: 'user009',
         theme: 'dark',
         language: 'en',
-        extras: { notifications: true }
+        extras: { notifications: true },
       },
       {
         userId: 'user010',
         theme: 'light',
         language: 'en',
-        extras: { notifications: false }
+        extras: { notifications: false },
       },
       {
         userId: 'useradmin',
         theme: 'dark',
         language: 'en',
-        extras: { notifications: true, admin: true }
-      }
+        extras: { notifications: true, admin: true },
+      },
     ],
-    skipDuplicates: true
+    skipDuplicates: true,
   })
 
   // Seed follow relationships
@@ -236,9 +270,9 @@ async function main() {
       // Admin follows some users
       { followerId: 'useradmin', followingId: 'user001', status: 'ACCEPTED' },
       { followerId: 'useradmin', followingId: 'user002', status: 'ACCEPTED' },
-      { followerId: 'useradmin', followingId: 'user003', status: 'ACCEPTED' }
+      { followerId: 'useradmin', followingId: 'user003', status: 'ACCEPTED' },
     ],
-    skipDuplicates: true
+    skipDuplicates: true,
   })
 
   console.log('✅ Seed data created successfully!')

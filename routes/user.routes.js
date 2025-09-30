@@ -1,54 +1,52 @@
 import { Router } from 'express'
-import {
-  acceptFollowRequestController,
-  cancelFollowRequestController,
-  followUserController,
-  getFollowersController,
-  getFollowingController,
-  getUserPreferencesController,
-  getUserProfileController,
-  registerUserController,
-  rejectFollowRequestController,
-  searchUsersController,
-  toggleUserPrivacyController,
-  unfollowController,
-  updateUserPreferencesController,
-  updateUserProfileController,
-  uploadAvatarController
-} from '../controllers/index.js'
+import * as userController from '../controllers/user.controller.js'
 import { internalAuthMiddleware, authMiddleware, validate, optionalAuthMiddleware } from '../middleware/index.js'
 import { userPreferencesSchema, userProfileUpdateSchema } from '../validations/index.js'
 import { avatarUpload } from '../middleware/upload.middleware.js'
+import { followRequestActionSchema } from '../validations/follow-request-action.schema.js'
 
 const router = Router()
 
 // search users (THE DECLARATION ORDER MATTERS, this one comes before /:id)
-router.get('/search', searchUsersController)
+router.get('/search', userController.searchUsersController)
+
+// get follow requests
+router.get('/me/follow-requests', authMiddleware, userController.getPendingFollowRequestsController)
+
+// interact with a request (accept, reject, cancel)
+router.patch('/me/follow-requests/:requestId', authMiddleware, validate(followRequestActionSchema), userController.followRequestActionController)
+
+// reject a follow request
+// router.patch('/me/follow-requests/:id/reject', authMiddleware, userController.rejectFollowRequestController)
 
 // Internal route for creating a user (accessible only by trusted services)
-router.post('/', internalAuthMiddleware, registerUserController)
+router.post('/', internalAuthMiddleware, userController.registerUserController)
 
-// user profile
-router.get('/:id', optionalAuthMiddleware, getUserProfileController)
-router.patch('/:id', authMiddleware, validate(userProfileUpdateSchema), updateUserProfileController)
-router.patch('/:id/privacy', authMiddleware, toggleUserPrivacyController)
+// get a user profile
+router.get('/:userId', optionalAuthMiddleware, userController.getUserProfileController)
 
-// user preferences endpoints
-router.get('/:id/preferences', authMiddleware, getUserPreferencesController)
+// update user profile
+router.patch('/me', authMiddleware, validate(userProfileUpdateSchema), userController.updateUserProfileController)
+router.patch('/me/privacy', authMiddleware, userController.toggleUserPrivacyController)
 
-router.patch('/:id/preferences', authMiddleware, validate(userPreferencesSchema), updateUserPreferencesController)
+// get user preferences
+router.get('/me/preferences', authMiddleware, userController.getUserPreferencesController)
 
-router.post('/me/avatar', authMiddleware, avatarUpload, uploadAvatarController)
+// update user preferences
+router.patch('/me/preferences', authMiddleware, validate(userPreferencesSchema), userController.updateUserPreferencesController)
 
-// Social
-router.post('/:id/follow', authMiddleware, followUserController)
+// update user avatar
+router.patch('/me/avatar', authMiddleware, avatarUpload, userController.uploadAvatarController)
 
-router.patch('/:id/follow/accept', authMiddleware, acceptFollowRequestController)
-router.patch('/:id/follow/reject', authMiddleware, rejectFollowRequestController)
-router.delete('/:id/follow/cancel', authMiddleware, cancelFollowRequestController)
-router.delete('/:id/follow', authMiddleware, unfollowController)
+// follow another user
+router.post('/me/following', authMiddleware, userController.followUserController)
 
-router.get('/:id/followers', authMiddleware, getFollowersController)
+// unfollow another user
+router.delete('/me/following/:userId', authMiddleware, userController.unfollowController)
 
-router.get('/:id/following', authMiddleware, getFollowingController)
+// get lists of followers and following-s
+router.get('/:userId/followers', authMiddleware, userController.getFollowersController)
+router.get('/:userId/following', authMiddleware, userController.getFollowingController)
+
+// router.delete('/:id/follow/cancel', authMiddleware, userController.cancelFollowRequestController)
 export default router
