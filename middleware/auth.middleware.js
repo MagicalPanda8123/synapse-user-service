@@ -11,11 +11,19 @@ const JWKS = createRemoteJWKSet(new URL(process.env.AUTH_JWKS_URL || 'http://loc
 
 export async function authMiddleware(req, res, next) {
   try {
+    let token = null
     const authHeader = req.headers.authorization
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'Missing or invalid Authorizaion header' })
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.split(' ')[1]
     }
-    const token = authHeader.split(' ')[1]
+    // Try to get token from cookie if not in header
+    if (!token && req.cookies && req.cookies.accessToken) {
+      token = req.cookies.accessToken
+    }
+
+    if (!token) {
+      return res.status(401).json({ error: 'Missing or invalid Authorization header or access token cookie' })
+    }
     const { payload } = await jwtVerify(token, JWKS)
     req.user = payload
     next()
@@ -34,17 +42,19 @@ export async function authMiddleware(req, res, next) {
  */
 export async function optionalAuthMiddleware(req, res, next) {
   try {
+    let token = null
     const authHeader = req.headers.authorization
-
-    // No authorization header provided - continue without user info
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.split(' ')[1]
+    }
+    // Try to get token from cookie if not in header
+    if (!token && req.cookies && req.cookies.accessToken) {
+      token = req.cookies.accessToken
+    }
+    if (!token) {
       req.user = undefined
       return next()
     }
-
-    const token = authHeader.split(' ')[1]
-
-    // Try to verify the token
     const { payload } = await jwtVerify(token, JWKS)
     req.user = payload
   } catch (error) {

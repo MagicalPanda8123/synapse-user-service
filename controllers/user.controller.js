@@ -1,6 +1,4 @@
 import {
-  acceptFollowRequestById,
-  cancelFollowRequest,
   followUser,
   getFollowers,
   getFollowing,
@@ -8,13 +6,11 @@ import {
   getUserPreferences,
   getUserProfile,
   registerUser,
-  rejectFollowRequestById,
   searchUsers,
   toggleUserPrivacy,
-  unfollowUser,
   updateUserPreferences,
   updateUserProfile,
-  uploadUserAvatar
+  uploadUserAvatar,
 } from '../services/index.js'
 
 import * as userService from '../services/user.service.js'
@@ -121,13 +117,13 @@ export async function updateUserPreferencesController(req, res, next) {
   }
 }
 
-export async function searchUsersController(req, res, next) {
+export async function getUsersController(req, res, next) {
   try {
-    const { name, page = 1, limit = 10 } = req.query
-    if (!name || name.trim() === '') {
-      return res.status(400).json({ error: 'Missing search query' })
+    const { q, cursor, limit = 10 } = req.query
+    if (!q || q.trim() === '') {
+      return res.status(400).json({ error: 'Missing quer)' })
     }
-    const users = await searchUsers(name, parseInt(page), parseInt(limit))
+    const users = await searchUsers(q, cursor, parseInt(limit))
     res.json(users)
   } catch (error) {
     next(error)
@@ -200,7 +196,7 @@ export async function followRequestActionController(req, res, next) {
         result = await userService.rejectFollowRequestById(userId, requestId)
         break
       case 'cancel':
-        result = await userService.cancelFollowRequest(userId, requestId)
+        result = await userService.deleteFollowByUserId(userId, requestId)
         break
     }
 
@@ -217,50 +213,12 @@ export async function followRequestActionController(req, res, next) {
     next(error)
   }
 }
-
-export async function rejectFollowRequestController(req, res, next) {
-  try {
-    const userId = req.user.sub
-    const followId = req.params.id
-
-    const result = await rejectFollowRequestById(userId, followId)
-    if (!result) return res.status(404).json({ error: 'Follow request not found' })
-
-    res.status(204).send()
-  } catch (error) {
-    if (error.message.startsWith('Forbidden')) {
-      return res.status(403).json({ error: error.message })
-    }
-    if (error.message.startsWith('Cannot reject')) {
-      return res.status(400).json({ error: error.message })
-    }
-    next(error)
-  }
-}
-
-export async function cancelFollowRequestController(req, res, next) {
+export async function deleteFollowController(req, res, next) {
   try {
     const followerId = req.user.sub
-    const followingId = req.params.id
+    const followId = req.params.followId || req.params.requestId
 
-    const result = await cancelFollowRequest(followerId, followingId)
-
-    if (!result) {
-      return res.status(404).json({ error: 'Follow request not found' })
-    }
-
-    res.status(204).send() // no content - request (follow record) was deleted
-  } catch (error) {
-    next(error)
-  }
-}
-
-export async function unfollowController(req, res, next) {
-  try {
-    const followerId = req.user.sub
-    const followingId = req.params.id
-
-    const result = await unfollowUser(followerId, followingId)
+    const result = await userService.deleteFollowByUserId(followerId, followId)
 
     if (!result) {
       return res.status(404).json({ error: 'Follow relationship not found' })
@@ -268,17 +226,58 @@ export async function unfollowController(req, res, next) {
 
     res.status(204).send()
   } catch (error) {
+    if (error.message.includes('Forbiddern')) {
+      return res.status(403).json({ error: error.message })
+    }
     next(error)
   }
 }
 
+// export async function rejectFollowRequestController(req, res, next) {
+//   try {
+//     const userId = req.user.sub
+//     const followId = req.params.id
+
+//     const result = await rejectFollowRequestById(userId, followId)
+//     if (!result) return res.status(404).json({ error: 'Follow request not found' })
+
+//     res.status(204).send()
+//   } catch (error) {
+//     if (error.message.startsWith('Forbidden')) {
+//       return res.status(403).json({ error: error.message })
+//     }
+//     if (error.message.startsWith('Cannot reject')) {
+//       return res.status(400).json({ error: error.message })
+//     }
+//     next(error)
+//   }
+// }
+
+// export async function cancelFollowRequestController(req, res, next) {
+//   try {
+//     const followerId = req.user.sub
+//     const followingId = req.params.id
+
+//     const result = await cancelFollowRequest(followerId, followingId)
+
+//     if (!result) {
+//       return res.status(404).json({ error: 'Follow request not found' })
+//     }
+
+//     res.status(204).send() // no content - request (follow record) was deleted
+//   } catch (error) {
+//     next(error)
+//   }
+// }
+
 export async function getFollowersController(req, res, next) {
   try {
-    const userId = req.user.sub
-    const { page = 1, limit = 20 } = req.query
+    const targetUserId = req.params.userId
+    const requesterId = req.user?.sub || null
+    const { cursor, limit = 20 } = req.query
 
-    const followers = await getFollowers(userId, parseInt(page), parseInt(limit))
-    res.json(followers)
+    const result = await userService.getFollowers(targetUserId, requesterId, cursor, parseInt(limit))
+    res.json(result)
   } catch (error) {
     next(error)
   }
@@ -286,10 +285,11 @@ export async function getFollowersController(req, res, next) {
 
 export async function getFollowingController(req, res, next) {
   try {
-    const userId = req.user.sub
-    const { page = 1, limit = 20 } = req.query
+    const targetUserId = req.params.userId
+    const requesterId = req.user?.sub || null
+    const { cursor, limit = 20 } = req.query
 
-    const following = await getFollowing(userId, parseInt(page), parseInt(limit))
+    const following = await getFollowing(targetUserId, requesterId, cursor, parseInt(limit))
     res.json(following)
   } catch (error) {
     next(error)
@@ -303,37 +303,21 @@ export async function uploadAvatarController(req, res, next) {
 
     const result = await uploadUserAvatar(userId, file.buffer, file.mimetype)
 
-    res.json({
-      message: 'Avatar uploaded successfully',
-      avatarKey: result.avatarKey,
-      fileSize: file.size,
-      contentType: file.mimetype,
-      originalName: file.originalName
-    })
+    res.json(result)
   } catch (error) {
     next(error)
   }
 }
 
 // Get pending follow requests for the authenticated user
-export async function getPendingFollowRequestsController(req, res, next) {
+export async function getFollowRequestsController(req, res, next) {
   try {
     const userId = req.user.sub
+    const { cursor, limit = 10 } = req.query
 
-    // Get pagination parameters
-    const page = parseInt(req.query.page) || 1
-    const limit = Math.min(parseInt(req.query.limit) || 10, 50) // Max 50 per page
+    const result = await getPendingFollowRequests(userId, cursor, parseInt(limit))
 
-    if (page < 1 || limit < 1) {
-      return res.status(400).json({ error: 'Invalid pagination parameters' })
-    }
-
-    const result = await getPendingFollowRequests(userId, page, limit)
-
-    res.json({
-      message: 'Pending follow requests retrieved successfully',
-      data: result
-    })
+    res.json(result)
   } catch (error) {
     next(error)
   }

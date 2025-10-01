@@ -36,11 +36,7 @@ export async function createFollowRelationship(data) {
   return await prisma.follow.create({ data })
 }
 
-export async function updateFollowRequestStatus(
-  followerId,
-  followingId,
-  status
-) {
+export async function updateFollowRequestStatus(followerId, followingId, status) {
   const result = await prisma.follow.updateMany({
     where: { followerId, followingId, status: 'PENDING' },
     data: { status },
@@ -61,10 +57,7 @@ export async function deletePendingFollowRelationship(followerId, followingId) {
   return result.count > 0
 }
 
-export async function deleteAcceptedFollowRelationship(
-  followerId,
-  followingId
-) {
+export async function deleteAcceptedFollowRelationship(followerId, followingId) {
   const result = await prisma.follow.deleteMany({
     where: {
       followerId,
@@ -76,15 +69,14 @@ export async function deleteAcceptedFollowRelationship(
   return result.count > 0
 }
 
-export async function getFollowersByUserId(userId, page = 1, limit = 20) {
-  const skip = (page - 1) * limit
-
-  return await prisma.follow.findMany({
+export async function getFollowersByUserId(userId, cursor, limit = 20) {
+  const prismaQuery = {
     where: {
       followingId: userId,
       status: 'ACCEPTED',
     },
     select: {
+      id: true,
       follower: {
         select: {
           id: true,
@@ -99,56 +91,25 @@ export async function getFollowersByUserId(userId, page = 1, limit = 20) {
     orderBy: {
       createdAt: 'desc',
     },
-    skip,
     take: limit,
-  })
+  }
+
+  if (cursor) {
+    prismaQuery.cursor = { id: cursor }
+    prismaQuery.skip = 1
+  }
+
+  return await prisma.follow.findMany(prismaQuery)
 }
 
-export async function getPendingRequestsByUserId(userId, page = 1, limit = 10) {
-  const skip = (page - 1) * limit
-
-  return await prisma.follow.findMany({
-    where: {
-      followingId: userId,
-      status: 'PENDING',
-    },
-    include: {
-      follower: {
-        select: {
-          id: true,
-          username: true,
-          firstName: true,
-          lastName: true,
-          avatarKey: true,
-        },
-      },
-    },
-    orderBy: {
-      createdAt: 'desc',
-    },
-    skip,
-    take: limit,
-  })
-}
-
-// Get count of pending follow requests for a user
-export async function getPendingRequestCountByUserId(userId) {
-  return await prisma.follow.count({
-    where: {
-      followingId: userId,
-      status: 'PENDING',
-    },
-  })
-}
-
-export async function getFollowingByUserId(userId, page = 1, limit = 20) {
-  const skip = (page - 1) * limit
-  return await prisma.follow.findMany({
+export async function getFollowingByUserId(userId, cursor, limit = 20) {
+  const prismaQuery = {
     where: {
       followerId: userId,
       status: 'ACCEPTED',
     },
     select: {
+      id: true,
       following: {
         select: {
           id: true,
@@ -163,7 +124,56 @@ export async function getFollowingByUserId(userId, page = 1, limit = 20) {
     orderBy: {
       createdAt: 'desc',
     },
-    skip,
     take: limit,
+  }
+
+  if (cursor) {
+    prismaQuery.cursor = { id: cursor }
+    prismaQuery.skip = 1
+  }
+
+  return await prisma.follow.findMany(prismaQuery)
+}
+
+export async function getPendingRequestsByUserId(userId, cursor, limit = 10) {
+  const prismaQuery = {
+    where: {
+      followingId: userId,
+      status: 'PENDING',
+    },
+    select: {
+      id: true,
+      follower: {
+        select: {
+          id: true,
+          username: true,
+          firstName: true,
+          lastName: true,
+          avatarKey: true,
+        },
+      },
+      createdAt: true,
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+    take: limit,
+  }
+
+  if (cursor) {
+    prismaQuery.cursor = { id: cursor }
+    prismaQuery.skip = 1
+  }
+
+  return await prisma.follow.findMany(prismaQuery)
+}
+
+// Get count of pending follow requests for a user
+export async function getPendingRequestCountByUserId(userId) {
+  return await prisma.follow.count({
+    where: {
+      followingId: userId,
+      status: 'PENDING',
+    },
   })
 }

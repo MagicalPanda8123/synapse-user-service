@@ -1,6 +1,7 @@
 import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
+import cookieParser from 'cookie-parser'
 import os from 'os'
 import routes from './routes/index.js'
 import { prisma } from './config/index.js'
@@ -9,8 +10,24 @@ import { errorHandler } from './middleware/error.middleware.js'
 const app = express()
 
 // Security middlewares
+app.use(
+  cors({
+    origin: 'http://localhost:3000',
+    credentials: true,
+    methods: ['GET', 'POST', 'PATCH', 'DELETE', 'PUT', 'OPTIONS'],
+    allowedHeaders: ['Authorization', 'authorization', 'Content-Type'],
+  })
+)
 app.use(helmet())
-app.use(cors({ origin: 'http://localhost:3000', credentials: true }))
+app.use(cookieParser())
+
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', 'http://localhost:3000')
+  res.header('Access-Control-Allow-Credentials', 'true')
+  res.header('Access-Control-Allow-Methods', 'GET,POST,PATCH,DELETE,PUT,OPTIONS')
+  res.header('Access-Control-Allow-Headers', 'Authorization, Content-Type')
+  next()
+})
 
 // built-in middlewares
 app.use(express.json())

@@ -8,25 +8,39 @@ import { followRequestActionSchema } from '../validations/follow-request-action.
 const router = Router()
 
 // search users (THE DECLARATION ORDER MATTERS, this one comes before /:id)
-router.get('/search', userController.searchUsersController)
+router.get('/', userController.getUsersController)
+
+/**
+ *
+ * FOLLOW REQUESTS AND RELATIONSHIPS
+ *
+ */
 
 // get follow requests
-router.get('/me/follow-requests', authMiddleware, userController.getPendingFollowRequestsController)
+router.get('/me/follow-requests', authMiddleware, userController.getFollowRequestsController)
 
-// interact with a request (accept, reject, cancel)
+// follow another user
+router.post('/me/following', authMiddleware, userController.followUserController)
+
+// accept, reject or cancel a follow request
 router.patch('/me/follow-requests/:requestId', authMiddleware, validate(followRequestActionSchema), userController.followRequestActionController)
 
-// reject a follow request
-// router.patch('/me/follow-requests/:id/reject', authMiddleware, userController.rejectFollowRequestController)
+// unfollow a user
+router.delete('/me/following/:followId', authMiddleware, userController.deleteFollowController)
 
-// Internal route for creating a user (accessible only by trusted services)
-router.post('/', internalAuthMiddleware, userController.registerUserController)
+/**
+ *
+ * USER PROFILE & PREFERENCES MANAGEMENT
+ *
+ */
 
 // get a user profile
-router.get('/:userId', optionalAuthMiddleware, userController.getUserProfileController)
+router.get('/:userId', authMiddleware, userController.getUserProfileController)
 
 // update user profile
 router.patch('/me', authMiddleware, validate(userProfileUpdateSchema), userController.updateUserProfileController)
+
+// toggle profile privacy
 router.patch('/me/privacy', authMiddleware, userController.toggleUserPrivacyController)
 
 // get user preferences
@@ -38,15 +52,18 @@ router.patch('/me/preferences', authMiddleware, validate(userPreferencesSchema),
 // update user avatar
 router.patch('/me/avatar', authMiddleware, avatarUpload, userController.uploadAvatarController)
 
-// follow another user
-router.post('/me/following', authMiddleware, userController.followUserController)
-
-// unfollow another user
-router.delete('/me/following/:userId', authMiddleware, userController.unfollowController)
-
 // get lists of followers and following-s
-router.get('/:userId/followers', authMiddleware, userController.getFollowersController)
-router.get('/:userId/following', authMiddleware, userController.getFollowingController)
+router.get('/:userId/followers', optionalAuthMiddleware, userController.getFollowersController)
+router.get('/:userId/following', optionalAuthMiddleware, userController.getFollowingController)
 
+/**
+ *
+ * INTERNAL ENDPOINTS
+ *
+ */
+
+// Internal route for creating a user (accessible only by trusted services)
+router.post('/', internalAuthMiddleware, userController.registerUserController)
 // router.delete('/:id/follow/cancel', authMiddleware, userController.cancelFollowRequestController)
+
 export default router

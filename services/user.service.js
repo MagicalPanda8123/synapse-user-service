@@ -19,10 +19,11 @@ import {
   updateFollowRequestStatus,
   updateFollowStatusById,
   updateUserById,
-  updateUserPreferencesByUserId
+  updateUserPreferencesByUserId,
 } from '../repositories/index.js'
 import { generateAvatarDownloadUrl, uploadAvatarToS3 } from './s3.service.js'
 import * as userRepo from '../repositories/user.repository.js'
+import * as followRepo from '../repositories/follow.repository.js'
 
 // HELPER FUNCTIONS -----------------------------------------------------------------------------------------
 async function addAvatarUrlToUser(user) {
@@ -33,12 +34,20 @@ async function addAvatarUrlToUser(user) {
 
   return {
     ...user,
-    avatarUrl
+    avatarUrl,
   }
 }
 
 async function addAvatarUrlToUsers(users) {
-  return await Promise.all(users.map(addAvatarUrlToUser))
+  return await Promise.all(
+    users.map(async (user) => {
+      const avatarUrl = await generateAvatarDownloadUrl(user.avatarKey, 1800)
+      return {
+        ...user,
+        avatarUrl,
+      }
+    })
+  )
 }
 
 // Get follow relationship status between two users
@@ -55,10 +64,8 @@ async function getFollowRelationshipStatus(requesterId, targetUserId) {
     const targetFollowsRequester = await findFollowRelationship(targetUserId, requesterId)
 
     return {
-      isFollowing: requesterFollowsTarget?.status === 'ACCEPTED',
-      isRequested: requesterFollowsTarget?.status === 'PENDING',
-      followsYou: targetFollowsRequester?.status === 'ACCEPTED',
-      requestsYou: targetFollowsRequester?.status === 'PENDING'
+      requesterToTarget: requesterFollowsTarget || null,
+      targetToRequester: targetFollowsRequester || null,
     }
   } catch (error) {
     console.error('Error checking follow relationship:', error)
@@ -78,7 +85,7 @@ export async function registerUser(accountId, username, firstName, lastName, gen
     username,
     firstName,
     lastName,
-    gender: genderEnum
+    gender: genderEnum,
   })
 
   // create the user's preferences record (with default values)
@@ -115,7 +122,7 @@ export async function getUserProfile(userId, targetUserId) {
     isPrivate: user.isPrivate,
     followerCount: user._count.followers,
     followingCount: user._count.following,
-    relationshipStatus
+    relationshipStatus,
   }
 }
 
@@ -133,7 +140,7 @@ export async function updateUserProfile(userId, data) {
     bio: updatedUser.bio,
     location: updatedUser.location,
     avatarUrl,
-    isPrivate: updatedUser.isPrivate
+    isPrivate: updatedUser.isPrivate,
   }
 }
 
@@ -154,19 +161,45 @@ export async function updateUserPreferences(userId, data) {
   return await updateUserPreferencesByUserId(userId, data)
 }
 
-export async function searchUsers(query, page, limit) {
-  const users = await searchUsersByQuery(query, page, limit)
-  return await addAvatarUrlToUsers(users)
+export async function searchUsers(query, cursor, limit) {
+  // Fetch (limit + 1) users to check if there's more
+  const result = await searchUsersByQuery(query, cursor, limit + 1)
+  const users = await addAvatarUrlToUsers(result.slice(0, limit))
+  const formattedUsers = users.map((user) => {
+    return {
+      id: user.id,
+      username: user.username,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      avatarUrl: user.avatarUrl,
+      isPrivate: user.isPrivate,
+      followerCount: user._count.followers,
+    }
+  })
+
+  // Cursor pagination logic
+  const hasMore = result.length > limit
+  const nextCursor = hasMore ? result[limit - 1].id : null
+
+  return {
+    users: formattedUsers,
+    pagination: {
+      hasMore,
+      nextCursor,
+    },
+  }
 }
 
 export async function toggleUserPrivacy(userId) {
   const user = await findUserById(userId)
   if (!user) return null
 
-  const updatedUser = await updateUserById(userId, { isPrivate: !user.isPrivate })
+  const updatedUser = await updateUserById(userId, {
+    isPrivate: !user.isPrivate,
+  })
   return {
     id: updatedUser.id,
-    isPrivate: updatedUser.isPrivate
+    isPrivate: updatedUser.isPrivate,
   }
 }
 
@@ -204,48 +237,153 @@ export async function rejectFollowRequestById(userId, followId) {
   return true
 }
 
-export async function cancelFollowRequest(followerId, followingId) {
-  return await deletePendingFollowRelationship(followerId, followingId)
+// export async function cancelFollowRequest(followerId, followingId) {
+//   return await deletePendingFollowRelationship(followerId, followingId)
+// }
+
+export async function deleteFollowByUserId(userId, followId) {
+  const follow = await followRepo.findFollowById(followId)
+  if (!follow) {
+    return null
+  }
+
+  if (follow.followerId !== userId) {
+    throw new Error('Forbidden: not yours to decide bro')
+  }
+
+  return await followRepo.deleteFollowById(followId)
 }
 
-export async function unfollowUser(followerId, followingId) {
-  return await deleteAcceptedFollowRelationship(followerId, followingId)
-}
+export async function getFollowers(targetUserId, requesterId, cursor, limit) {
+  const targetUser = await userRepo.findUserById(targetUserId)
+  if (!targetUser) throw new Error('User not found')
 
-export async function getFollowers(userId, page, limit) {
-  const followers = await getFollowersByUserId(userId, page, limit)
-  return await addAvatarUrlToUsers(followers)
-}
+  const isSelf = requesterId && requesterId === targetUserId
 
-export async function getFollowing(userId, page, limit) {
-  const following = await getFollowingByUserId(userId, page, limit)
-  return await addAvatarUrlToUsers(following)
-}
+  // Privacy check
+  if (targetUser.isPrivate && !isSelf) {
+    if (!requesterId) throw new Error('This user is private')
+    const relationship = await followRepo.findFollowRelationship(requesterId, targetUserId)
+    if (!relationship || relationship.status !== 'ACCEPTED') {
+      throw new Error('This profile is private, you must follow to view their followers')
+    }
+  }
 
-// Get pending follow requests for a user
-export async function getPendingFollowRequests(userId, page = 1, limit = 10) {
-  const requests = await getPendingRequestsByUserId(userId, page, limit)
-  const totalCount = await getPendingRequestCountByUserId(userId)
+  const result = await getFollowersByUserId(targetUserId, cursor, limit + 1)
+  const follows = result.slice(0, limit)
 
-  // Add avatar URLs to the requesters
-  const requestsWithAvatars = await Promise.all(
-    requests.map(async (request) => {
-      const followerWithAvatar = await addAvatarUrlToUser(request.follower)
+  // FIX: Use Promise.all to resolve avatar URLs
+  const formattedFollows = await Promise.all(
+    follows.map(async (follow) => {
+      const avatarUrl = await generateAvatarDownloadUrl(follow.follower.avatarKey, 1800)
       return {
-        id: request.id,
-        createdAt: request.createdAt,
-        requester: followerWithAvatar
+        id: follow.id,
+        follower: {
+          id: follow.follower.id,
+          username: follow.follower.username,
+          firstName: follow.follower.firstName,
+          lastName: follow.follower.lastName,
+          avatarUrl,
+        },
+        createdAt: follow.createdAt,
       }
     })
   )
 
+  const hasMore = result.length > limit
+  const nextCursor = hasMore ? result[limit - 1].id : null
+
   return {
-    requests: requestsWithAvatars,
-    totalCount,
-    currentPage: page,
-    totalCount
+    follows: formattedFollows,
+    pagination: {
+      hasMore,
+      nextCursor,
+    },
   }
 }
+
+export async function getFollowing(targetUserId, requesterId, cursor, limit) {
+  const targetUser = await userRepo.findUserById(targetUserId)
+  if (!targetUser) throw new Error('User not found')
+
+  const isSelf = requesterId && requesterId === targetUserId
+
+  // Privacy check
+  if (targetUser.isPrivate && !isSelf) {
+    if (!requesterId) throw new Error('This user is private')
+    const relationship = await followRepo.findFollowRelationship(requesterId, targetUserId)
+    if (!relationship || relationship.status !== 'ACCEPTED') {
+      throw new Error('This profile is private, you must follow to view their following')
+    }
+  }
+
+  const result = await getFollowingByUserId(targetUserId, cursor, limit + 1)
+  const follows = result.slice(0, limit)
+
+  // FIX: Use Promise.all to resolve avatar URLs
+  const formattedFollowing = await Promise.all(
+    follows.map(async (follow) => {
+      const avatarUrl = await generateAvatarDownloadUrl(follow.following.avatarKey, 1800)
+      return {
+        id: follow.id,
+        following: {
+          id: follow.following.id,
+          username: follow.following.username,
+          firstName: follow.following.firstName,
+          lastName: follow.following.lastName,
+          avatarUrl,
+        },
+        createdAt: follow.createdAt,
+      }
+    })
+  )
+
+  const hasMore = result.length > limit
+  const nextCursor = hasMore ? result[limit - 1].id : null
+
+  return {
+    following: formattedFollowing,
+    pagination: {
+      hasMore,
+      nextCursor,
+    },
+  }
+}
+
+// Get pending follow requests for a user
+export async function getPendingFollowRequests(userId, cursor, limit = 10) {
+  const requests = await getPendingRequestsByUserId(userId, cursor, limit + 1)
+
+  // Add avatar URLs to the requesters
+  const requestsWithAvatars = await Promise.all(
+    requests.slice(0, limit).map(async (request) => {
+      const avatarUrl = await generateAvatarDownloadUrl(request.follower.avatarKey)
+      return {
+        id: request.id,
+        createdAt: request.createdAt,
+        requester: {
+          id: request.follower.id,
+          username: request.follower.username,
+          firstName: request.follower.firstName,
+          lastName: request.follower.lastName,
+          avatarUrl: avatarUrl,
+        },
+      }
+    })
+  )
+
+  const hasMore = requests.length > limit
+  const nextCursor = hasMore ? requests[limit - 1].id : null
+
+  return {
+    requests: requestsWithAvatars,
+    pagination: {
+      hasMore,
+      nextCursor,
+    },
+  }
+}
+
 export async function uploadUserAvatar(userId, fileBuffer, miemtype) {
   try {
     // UPload to S3 first
@@ -253,14 +391,15 @@ export async function uploadUserAvatar(userId, fileBuffer, miemtype) {
 
     // Update user record in DB
     const updatedUser = await updateUserById(userId, {
-      avatarKey: s3Result.key
+      avatarKey: s3Result.key,
     })
 
     console.log(s3Result)
+    const avatarUrl = await generateAvatarDownloadUrl(updatedUser.avatarKey)
 
     return {
-      avatarKey: updatedUser.avatarKey,
-      s3Result
+      avatarUrl,
+      s3Result,
     }
   } catch (error) {
     throw new Error(`Failed to upload avatar: ${error.message}`)

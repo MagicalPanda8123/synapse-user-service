@@ -15,10 +15,10 @@ export async function findUserByIdWithCounts(id) {
       _count: {
         select: {
           followers: { where: { status: 'ACCEPTED' } },
-          following: { where: { status: 'ACCEPTED' } }
-        }
-      }
-    }
+          following: { where: { status: 'ACCEPTED' } },
+        },
+      },
+    },
   })
 }
 
@@ -31,16 +31,10 @@ export async function deleteUserById(id) {
 }
 
 // search users by query (ordered by amount of followers) with pagination
-export async function searchUsersByQuery(query, page = 1, limit = 10) {
-  const skip = (page - 1) * limit
-
-  return await prisma.user.findMany({
+export async function searchUsersByQuery(query, cursor, limit = 10) {
+  const prismaQuery = {
     where: {
-      OR: [
-        { username: { contains: query, mode: 'insensitive' } },
-        { firstName: { contains: query, mode: 'insensitive' } },
-        { lastName: { contains: query, mode: 'insensitive' } }
-      ]
+      OR: [{ username: { contains: query, mode: 'insensitive' } }, { firstName: { contains: query, mode: 'insensitive' } }, { lastName: { contains: query, mode: 'insensitive' } }],
     },
     select: {
       id: true,
@@ -48,16 +42,24 @@ export async function searchUsersByQuery(query, page = 1, limit = 10) {
       firstName: true,
       lastName: true,
       avatarKey: true,
+      isPrivate: true,
       _count: {
-        select: { followers: true }
-      }
+        select: { followers: true },
+      },
     },
     orderBy: {
       followers: {
-        _count: 'desc'
-      }
+        _count: 'desc',
+      },
     },
-    skip,
-    take: limit
-  })
+    take: limit,
+  }
+
+  // If cursor is provided, use it for pagination
+  if (cursor) {
+    prismaQuery.cursor = { id: cursor }
+    prismaQuery.skip = 1
+  }
+
+  return await prisma.user.findMany(prismaQuery)
 }
