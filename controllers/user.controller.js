@@ -15,6 +15,8 @@ import {
 
 import * as userService from '../services/user.service.js'
 
+const MAX_USER_IDS = 50
+
 export async function registerUserController(req, res, next) {
   try {
     // verify internal JWT claims
@@ -318,6 +320,36 @@ export async function getFollowRequestsController(req, res, next) {
     const result = await getPendingFollowRequests(userId, cursor, parseInt(limit))
 
     res.json(result)
+  } catch (error) {
+    next(error)
+  }
+}
+
+export async function getSimpleProfilesController(req, res, next) {
+  try {
+    const { userId, userIds } = req.query
+
+    if (userId) {
+      const user = await userService.getSimpleUserProfile(userId)
+      if (!user) return res.status(404).json({ message: 'User not found' })
+      return res.json(user)
+    }
+
+    if (userIds) {
+      const ids = userIds
+        .split(',')
+        .map((id) => id.trim())
+        .filter(Boolean)
+      if (ids.length === 0) return res.status(400).json({ message: 'no valid userIds provided' })
+      if (ids.length > MAX_USER_IDS) {
+        return res.status(400).json({ message: `You can request up to ${MAX_USER_IDS} userIds at once` })
+      }
+
+      const users = await userService.getSimpleUserProfiles(ids)
+      return res.json(users)
+    }
+
+    return res.status(400).json({ message: 'userId or userIds required' })
   } catch (error) {
     next(error)
   }

@@ -2,12 +2,13 @@
 import 'dotenv/config'
 
 import app from './app.js'
-import prisma from './config/prisma.js'
+import { checkPrismaConnection } from './config/prisma.js'
+import { getRabbitMQConnection } from './config/rabbitmq.js'
 
 async function startServer() {
   try {
-    await prisma.$connect()
-    console.log('Connected to Prisma DB')
+    await checkPrismaConnection()
+    await getRabbitMQConnection()
     // Future: connect to RabbitMQ, Redis, etc.
 
     const PORT = process.env.PORT || 3000

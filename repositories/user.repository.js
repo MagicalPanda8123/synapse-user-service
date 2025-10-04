@@ -63,3 +63,17 @@ export async function searchUsersByQuery(query, cursor, limit = 10) {
 
   return await prisma.user.findMany(prismaQuery)
 }
+
+export async function findSimpleUserProfileById(userId) {
+  return await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, username: true, avatarKey: true },
+  })
+}
+
+export async function findSimpleUserProfilesByIds(userIds) {
+  return await prisma.user.findMany({
+    where: { id: { in: userIds } },
+    select: { id: true, username: true, avatarKey: true },
+  })
+}

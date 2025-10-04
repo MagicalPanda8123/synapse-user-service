@@ -33,6 +33,8 @@ router.delete('/me/following/:followId', authMiddleware, userController.deleteFo
  * USER PROFILE & PREFERENCES MANAGEMENT
  *
  */
+// get user simple profile
+router.get('/simple-profiles', userController.getSimpleProfilesController)
 
 // get a user profile
 router.get('/:userId', authMiddleware, userController.getUserProfileController)

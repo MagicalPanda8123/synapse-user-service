@@ -24,6 +24,7 @@ import {
 import { generateAvatarDownloadUrl, uploadAvatarToS3 } from './s3.service.js'
 import * as userRepo from '../repositories/user.repository.js'
 import * as followRepo from '../repositories/follow.repository.js'
+import { publishUsernameChanged } from '../events/publishers/user.publisher.js'
 
 // HELPER FUNCTIONS -----------------------------------------------------------------------------------------
 async function addAvatarUrlToUser(user) {
@@ -128,8 +129,13 @@ export async function getUserProfile(userId, targetUserId) {
 
 // update user profile (partially)
 export async function updateUserProfile(userId, data) {
+  const currentUser = await userRepo.findUserById(userId)
   const updatedUser = await updateUserById(userId, data)
   const avatarUrl = await generateAvatarDownloadUrl(updatedUser.avatarKey, 1800)
+
+  if (data.username && data.username !== currentUser.username) {
+    await publishUsernameChanged(userId, data.username)
+  }
 
   return {
     id: updatedUser.id,
@@ -404,4 +410,12 @@ export async function uploadUserAvatar(userId, fileBuffer, miemtype) {
   } catch (error) {
     throw new Error(`Failed to upload avatar: ${error.message}`)
   }
+}
+
+export async function getSimpleUserProfile(userId) {
+  return await userRepo.findSimpleUserProfileById(userId)
+}
+
+export async function getSimpleUserProfiles(userIds) {
+  return await userRepo.findSimpleUserProfilesByIds(userIds)
 }
