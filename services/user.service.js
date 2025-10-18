@@ -124,6 +124,7 @@ export async function getUserProfile(userId, targetUserId) {
     followerCount: user._count.followers,
     followingCount: user._count.following,
     relationshipStatus,
+    createdAt: user.createdAt,
   }
 }
 
@@ -417,5 +418,15 @@ export async function getSimpleUserProfile(userId) {
 }
 
 export async function getSimpleUserProfiles(userIds) {
-  return await userRepo.findSimpleUserProfilesByIds(userIds)
+  const profiles = await userRepo.findSimpleUserProfilesByIds(userIds)
+  const result = await Promise.all(
+    profiles.map(async (profile) => ({
+      id: profile.id,
+      username: profile.username,
+      firstName: profile.firstName,
+      lastName: profile.lastName,
+      avatarUrl: await generateAvatarDownloadUrl(profile.avatarKey),
+    }))
+  )
+  return result
 }

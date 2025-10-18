@@ -74,6 +74,6 @@ export async function findSimpleUserProfileById(userId) {
 export async function findSimpleUserProfilesByIds(userIds) {
   return await prisma.user.findMany({
     where: { id: { in: userIds } },
-    select: { id: true, username: true, avatarKey: true },
+    select: { id: true, username: true, avatarKey: true, firstName: true, lastName: true },
   })
 }
