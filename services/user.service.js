@@ -426,6 +426,7 @@ export async function getSimpleUserProfiles(userIds) {
       firstName: profile.firstName,
       lastName: profile.lastName,
       avatarUrl: await generateAvatarDownloadUrl(profile.avatarKey),
+      avatarKey: profile.avatarKey,
     }))
   )
   return result
